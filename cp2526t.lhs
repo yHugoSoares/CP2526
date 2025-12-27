@@ -184,12 +184,13 @@ import List hiding (fac)
 import Nat hiding (aux)
 import LTree hiding (merge)
 import BTree
--- import Exp
+import Exp
 import Probability
 -- import Svg hiding (for,dup,fdiv)
 import Data.Char
 import Data.Ratio
 import Data.List hiding (find)
+import qualified Data.Map as M
 import Control.Monad
 -- import Control.Monad.State
 import Control.Applicative hiding ((<|>),empty)
@@ -667,6 +668,10 @@ que sejam necessárias.
 \subsection*{Problema 1}
 
 \begin{code}
+-- Calculate the height of a binary tree
+heightTree :: BTree a -> Int
+heightTree Empty = 0
+heightTree (Node (_, (left, right))) = 1 + max (heightTree left) (heightTree right)
 
 glevels = undefined
 
@@ -676,17 +681,99 @@ bft t = undefined
 
 \subsection*{Problema 2}
 
+\begin{code}
+-- Sum using catamorphism (using existing cataList from List module)
+sumList :: Num a => [a] -> a
+sumList = cataList (either (const 0) (uncurry (+)))
+
+-- Product using catamorphism
+productList :: Num a => [a] -> a
+productList = cataList (either (const 1) (uncurry (*)))
+
+-- Length using catamorphism
+lengthList :: [a] -> Int
+lengthList = cataList (either (const 0) (\(_, n) -> n + 1))
+\end{code}
+
 \subsection*{Problema 3}
 
 \begin{code}
+-- Coin flip distribution
+coinFlip :: Dist Bool
+coinFlip = D [(True, 0.5), (False, 0.5)]
+
+-- Two consecutive flips
+twoFlips :: Dist (Bool, Bool)
+twoFlips = do
+  first <- coinFlip
+  second <- coinFlip
+  return (first, second)
+
+-- Probability of getting at least one heads
+probAtLeastOneHeads :: Float
+probAtLeastOneHeads = sum [p | ((h1, h2), p) <- unD twoFlips, h1 || h2]
+
 fair_merge' = anaStream undefined
 \end{code}
 
 \subsection*{Problema 4}
 
 \begin{code}
+type Env = M.Map String Int
+
+-- Define operators for expressions
+data Op = Add | Mul | Sub deriving (Show, Eq)
+
+-- Evaluate expression with environment
+evalExp :: Env -> Exp String Op -> Maybe Int
+evalExp env (Var x) = M.lookup x env
+evalExp env (Term Add [e1, e2]) = do
+  v1 <- evalExp env e1
+  v2 <- evalExp env e2
+  return (v1 + v2)
+evalExp env (Term Mul [e1, e2]) = do
+  v1 <- evalExp env e1
+  v2 <- evalExp env e2
+  return (v1 * v2)
+evalExp env (Term Sub [e1, e2]) = do
+  v1 <- evalExp env e1
+  v2 <- evalExp env e2
+  return (v1 - v2)
+evalExp _ _ = Nothing
+
+-- Test
+testEnv :: Env
+testEnv = M.fromList [("x", 5), ("y", 3)]
+
+testExpr :: Exp String Op
+testExpr = Term Add [Var "x", Term Mul [Var "y", Var "y"]]
+-- Expected: evalExp testEnv testExpr == Just 14 (5 + 3*3)
+
 pcataList = undefined
 gene = undefined
+\end{code}
+
+\subsection*{Problema 5}
+
+\begin{code}
+-- Factorial using natural numbers catamorphism
+-- cataNat g where g :: Either () Integer -> Integer
+-- The right branch receives the result of the recursive call (n-1)!
+-- We need to multiply it by n, but we don't have n directly in a cataNat
+-- So we need a different approach - this can't be done with simple cataNat
+
+-- Using for loop from Nat module (similar to how fac is defined there)
+factorial :: Integer -> Integer
+factorial = p2 . for (split (succ.p1) mul) (1,1)
+  where mul = uncurry (*)
+
+-- Test function using simpler recursive definition
+testFactorial :: Integer -> Integer
+testFactorial n = simpleFac n
+  where
+    simpleFac 0 = 1
+    simpleFac n = n * simpleFac (n - 1)
+-- Expected: testFactorial 5 == 120
 \end{code}
 
 
