@@ -665,6 +665,7 @@ que sejam necessárias.
 \noindent
 \textbf{Importante}: Não pode ser alterado o texto deste ficheiro fora deste anexo.
 
+% ----------------- Solução do problema 1 ---------------------------------------%
 \subsection*{Problema 1}
 
 \subsubsection*{Resolução}
@@ -722,6 +723,7 @@ bft t = undefined
 
 \end{code}
 
+%----------------- Solução do problema 2 ---------------------------------------%
 \subsection*{Problema 2}
 
 \subsubsection*{Resolução}
@@ -788,6 +790,7 @@ lengthList :: [a] -> Int
 lengthList = cataList (either (const 0) (\(_, n) -> n + 1))
 \end{code}
 
+%----------------- Solução do problema 3 ---------------------------------------%
 \subsection*{Problema 3}
 
 \subsubsection*{Resolução}
@@ -880,6 +883,7 @@ fair_merge' = anaStream gene
     geneR (x, Cons(y,ys)) = (y, Left(x, ys))
 \end{code}
 
+% ----------------- Solução do problema 4 ---------------------------------------%
 \subsection*{Problema 4}
 
 \subsubsection*{Resolução}
@@ -921,76 +925,20 @@ O gene deve processar:
 \end{itemize}
 
 \begin{code}
-type Env = M.Map String Int
 
--- Define operators for expressions
-data Op = Add | Mul | Sub deriving (Show, Eq)
-
--- Evaluate expression with environment
-evalExp :: Env -> Exp String Op -> Maybe Int
-evalExp env (Var x) = M.lookup x env
-evalExp env (Term Add [e1, e2]) = do
-  v1 <- evalExp env e1
-  v2 <- evalExp env e2
-  return (v1 + v2)
-evalExp env (Term Mul [e1, e2]) = do
-  v1 <- evalExp env e1
-  v2 <- evalExp env e2
-  return (v1 * v2)
-evalExp env (Term Sub [e1, e2]) = do
-  v1 <- evalExp env e1
-  v2 <- evalExp env e2
-  return (v1 - v2)
-evalExp _ _ = Nothing
-
--- Test
-testEnv :: Env
-testEnv = M.fromList [("x", 5), ("y", 3)]
-
-testExpr :: Exp String Op
-testExpr = Term Add [Var "x", Term Mul [Var "y", Var "y"]]
--- Expected: evalExp testEnv testExpr == Just 14 (5 + 3*3)
-
--- Probabilistic catamorphism for lists
 pcataList :: (Either () (a, b) -> Dist b) -> [a] -> Dist b
 pcataList g [] = g (Left ())
 pcataList g (x:xs) = g (Right (x, pcataList g xs))
 
--- Gene for message transmission
 gene :: Either () (String, Dist [String]) -> Dist [String]
 gene = either addStop transmitWord
   where
-    -- Add "stop" at the end with 90% probability, or nothing with 10%
     addStop () = D [(["stop"], 0.9), ([], 0.1)]
-    
-    -- Transmit word with 95% probability, or lose it with 5%
     transmitWord (word, rest) = do
       transmitted <- D [(True, 0.95), (False, 0.05)]
       restWords <- rest
       return (if transmitted then word : restWords else restWords)
-\end{code}
 
-\subsection*{Problema 5}
-
-\begin{code}
--- Factorial using natural numbers catamorphism
--- cataNat g where g :: Either () Integer -> Integer
--- The right branch receives the result of the recursive call (n-1)!
--- We need to multiply it by n, but we don't have n directly in a cataNat
--- So we need a different approach - this can't be done with simple cataNat
-
--- Using for loop from Nat module (similar to how fac is defined there)
-factorial :: Integer -> Integer
-factorial = p2 . for (split (succ.p1) mul) (1,1)
-  where mul = uncurry (*)
-
--- Test function using simpler recursive definition
-testFactorial :: Integer -> Integer
-testFactorial n = simpleFac n
-  where
-    simpleFac 0 = 1
-    simpleFac n = n * simpleFac (n - 1)
--- Expected: testFactorial 5 == 120
 \end{code}
 
 
