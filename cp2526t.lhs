@@ -126,8 +126,8 @@
 %====== DEFINIR GRUPO E ELEMENTOS =============================================%
 
 \group{G99}
-\studentA{107293}{Hugo Soares}
-\studentB{106XXX}{Francisco Martins}
+\studentA{xxxxxx}{Nome }
+\studentB{xxxxxx}{Nome }
 \studentC{xxxxxx}{Nome }
 
 %==============================================================================%
@@ -184,13 +184,12 @@ import List hiding (fac)
 import Nat hiding (aux)
 import LTree hiding (merge)
 import BTree
-import Exp
+-- import Exp
 import Probability
 -- import Svg hiding (for,dup,fdiv)
 import Data.Char
 import Data.Ratio
 import Data.List hiding (find)
-import qualified Data.Map as M
 import Control.Monad
 -- import Control.Monad.State
 import Control.Applicative hiding ((<|>),empty)
@@ -665,23 +664,33 @@ que sejam necessárias.
 \noindent
 \textbf{Importante}: Não pode ser alterado o texto deste ficheiro fora deste anexo.
 
-% ----------------- Solução do problema 1 ---------------------------------------%
 \subsection*{Problema 1}
 
-\subsubsection*{Resolução}
+\subsubsection*{1. Catamorfismo de níveis (|levels|)}
 
-Para o catamorfismo |levels|, precisamos definir o gene |glevels| que transforma
-o funtor de |BTree| em listas de listas. 
+A função |levels| visa agrupar os elementos da árvore numa lista de listas, 
+onde cada sublista contém os elementos de um nível. Para tal, definimos o catamorfismo |levels = cataBTree glevels|.
 
-O diagrama que expressa o catamorfismo é:
+O gene |glevels| processa os dois casos do tipo |BTree|: 
+
+\begin{itemize} 
+
+\item No caso |Empty|, retorna uma lista vazia |[]|. 
+\item No caso |Node (a, (l, r))|, onde |l| e |r| são as listas de listas já calculadas para as subárvores, 
+o gene coloca |a| numa lista unitária (nível 0) e utiliza a função |zipWithPlus| para fundir os níveis restantes das duas subárvores. 
+
+\end{itemize}
+
+O diagrama do catamorfismo é o seguinte:
+
 \begin{eqnarray*}
-\xymatrix@@C=1cm{
+\xymatrix@@C=3cm@@R=1.5cm{
     |BTree a|
+           \ar[r]^-{|outBTree|}
            \ar[d]_-{|levels|}
 &
     |1 + a >< (BTree a >< BTree a)|
            \ar[d]^{|id + id >< (levels >< levels)|}
-           \ar[l]_-{|inBTree|}
 \\
      |[[a]]|
 &
@@ -690,257 +699,213 @@ O diagrama que expressa o catamorfismo é:
 }
 \end{eqnarray*}
 
-O gene |glevels| deve processar:
-\begin{itemize}
-\item |Empty|: retorna lista vazia |[]|
-\item |Node (a, (ls, rs))|: junta o elemento |a| como primeiro nível, 
-e depois intercala os níveis das subárvores esquerda e direita
+\subsubsection*{2. Anamorfismo de travessia (|bft|)}
+
+Para a função |bft|, utilizamos a estratégia sugerida por Okasaki, baseada numa fila (|queue|).
+ Esta função é um anamorfismo de listas onde o estado é uma lista de árvores |[BTree a]|.
+
+O gene |geneBFT| funciona da seguinte forma: 
+\begin{itemize} 
+
+\item Se a fila estiver vazia (|[]|), a travessia termina. 
+\item Se o primeiro elemento for |Empty|, ignoramos e continuamos com o resto da fila. 
+\item Se for um |Node (a, (l, r))|, extraímos o valor |a| e adicionamos as subárvores |l| e |r| ao 
+
+\textbf{fim} 
+
+da fila (comportamento FIFO), garantindo a ordem por níveis. 
+
 \end{itemize}
 
-A função auxiliar que intercala duas listas de listas nível a nível:
-\begin{spec}
-zipWithPlus :: [[a]] -> [[a]] -> [[a]]
-zipWithPlus [] ys = ys
-zipWithPlus xs [] = xs  
-zipWithPlus (x:xs) (y:ys) = (x ++ y) : zipWithPlus xs ys
-\end{spec}
+\begin{code} 
 
-\begin{code}
--- Calculate the height of a binary tree
-heightTree :: BTree a -> Int
-heightTree Empty = 0
-heightTree (Node (_, (left, right))) = 1 + max (heightTree left) (heightTree right)
+glevels = either (const []) (\(a, (ls, rs)) -> [a] : zipWithPlus ls rs) 
+     where zipWithPlus [] ys = ys 
+           zipWithPlus xs [] = xs 
+           zipWithPlus (x:xs) (y:ys) = (x ++ y) : zipWithPlus xs ys
 
--- Gene for levels catamorphism
-glevels :: Either () (a, ([[a]], [[a]])) -> [[a]]
-glevels = either (const []) (\(a, (ls, rs)) -> [a] : zipWithPlus ls rs)
-  where
-    zipWithPlus [] ys = ys
-    zipWithPlus xs [] = xs
-    zipWithPlus (x:xs) (y:ys) = (x ++ y) : zipWithPlus xs ys
-
-bft t = undefined 
+bft t = anaList geneBFT [t] 
+     where geneBFT [] = Left () 
+           geneBFT (Empty : ts) = geneBFT ts 
+           geneBFT (Node (a, (l, r)) : ts) = Right (a, ts ++ [l, r])
 
 \end{code}
 
-%----------------- Solução do problema 2 ---------------------------------------%
 \subsection*{Problema 2}
 
-\subsubsection*{Resolução}
+\subsubsection*{Resolução Teórica}
 
-A função |f x n| calcula o seno hiperbólico através de aproximações da série de Taylor:
+A função |f x n| implementa o cálculo do seno hiperbólico através da sua série de Taylor:
 \begin{eqnarray*}
-\sinh(x) = \sum_{n=0}^{\infty} \frac{x^{2n+1}}{(2n+1)!} = x + \frac{x^3}{3!} + \frac{x^5}{5!} + \frac{x^7}{7!} + \cdots
+\sinh(x) = \sum_{i=0}^{\infty} a_i \quad \text{onde} \quad a_i = \frac{x^{2i+1}}{(2i+1)!}
 \end{eqnarray*}
 
-O termo geral é:
+A eficiência desta implementação reside na relação de recorrência entre termos consecutivos, evitando o cálculo redundante de fatoriais e potências:
 \begin{eqnarray*}
-a_n = \frac{x^{2n+1}}{(2n+1)!}
+a_{i} = \frac{h_{i-1}}{k_{i-1}} 
+\quad \text{com} 
+\quad h_i = x^2 \cdot h_{i-1} 
+\quad \text{e} 
+\quad k_i = k_{i-1} \cdot j_{i-1}
 \end{eqnarray*}
 
-E a relação de recorrência entre termos consecutivos:
-\begin{eqnarray*}
-a_{n+1} = a_n \times \frac{x^2}{(2n+2)(2n+3)}
-\end{eqnarray*}
+O catamorfismo de números naturais (|worker|) evolui conforme o seguinte diagrama:
 
-A função |worker n| mantém um estado com 5 componentes:
-\begin{itemize}
-\item |s| - soma parcial acumulada: $\sum_{i=0}^{n} a_i$
-\item |h| - numerador do termo atual: $x^{2n+1}$
-\item |k| - denominador do termo atual: $(2n+1)!$
-\item |j| - próximo valor para denominador: $(2n+2)$
-\item |m| - incremento: $2(2n+1)$
-\end{itemize}
-
-O diagrama da recursividade pode ser expresso como:
 \begin{eqnarray*}
-\xymatrix@@C=1cm{
+\xymatrix@@C=3cm@@R=1.5cm{
     |Nat0|
+           \ar[r]^-{|outNat|}
            \ar[d]_-{|worker|}
 &
     |1 + Nat0|
            \ar[d]^{|id + worker|}
-           \ar[l]_-{|inNat|}
 \\
-     |[Real]|
+     |[Double]|
 &
-     |1 + [Real]|
-           \ar[l]^-{|either (start x) (loop x)|}
+     |1 + [Double]|
+           \ar[l]^-{|either (const (start x)) (loop x)|}
 }
 \end{eqnarray*}
 
-Onde:
+
+
+\textbf{Análise das Componentes do Estado:}
+
+Para $n=0$, o estado inicial é |start x = [x, x^3, 6, 20, 22]|. A lógica dos acumuladores é a seguinte:
 \begin{itemize}
-\item |start x = [x, x^3, 6, 20, 22]| (estado inicial para $n=0$)
-\item |loop x [s, h, k, j, m] = [h/k + s, x^2 * h, k * j, j + m, m + 8]| (passo recursivo)
-\item |wrapper = head| (extrai a soma final)
+    \item $s$: Soma acumulada. Começa com $x$ (o termo $a_0$).
+    \item $h$: Numerador do próximo termo. Começa em $x^3$ (para $a_1$).
+    \item $k$: Denominador do próximo termo. Começa em $3! = 6$ (para $a_1$).
+    \item $j, m$: Auxiliares para a progressão do denominador. $j$ representa o multiplicador para o próximo fatorial ímpar. A constante $m$ (que aumenta de 8 em 8) garante que $j$ siga a sequência $(2n+2)(2n+3)$.
 \end{itemize}
 
+O |wrapper| (função |head|) extrai o primeiro elemento da lista, que é a soma acumulada final |s| após |n| iterações.
+
+\subsubsection*{Implementação}
+
 \begin{code}
--- Sum using catamorphism (using existing cataList from List module)
+
+
+f :: Double -> Int -> Double
+f x n = wrapper (worker x n)
+  where
+    wrapper = head
+    worker x = cataNat (either (const (start x)) (loop x))
+    start x = [x, x^3, 6, 20, 22]
+    loop x [s, h, k, j, m] = [s + h/k, x^2 * h, k * j, j + m, m + 8]
+
+
 sumList :: Num a => [a] -> a
 sumList = cataList (either (const 0) (uncurry (+)))
 
--- Product using catamorphism
 productList :: Num a => [a] -> a
 productList = cataList (either (const 1) (uncurry (*)))
 
--- Length using catamorphism
 lengthList :: [a] -> Int
-lengthList = cataList (either (const 0) (\(_, n) -> n + 1))
+lengthList = cataList (either (const 0) (succ . p2))
 \end{code}
 
-%----------------- Solução do problema 3 ---------------------------------------%
 \subsection*{Problema 3}
 
-\subsubsection*{Resolução}
+\subsubsection*{Lei de Fokkinga Dual}
 
-O problema pede para definir |fair_merge| como um anamorfismo de |Stream|s.
-Primeiro, vamos derivar a lei dual da recursividade mútua.
+Para Streams (listas infinitas), o anamorfismo é definido pelo gene |g : S -> A >< S|. A Lei de Fokkinga Dual permite-nos fundir dois anamorfismos que partilham a mesma estrutura de saída, simplificando a composição de sistemas dinâmicos. A sua derivação baseia-se na propriedade de que o produto de dois anamorfismos é equivalente a um anamorfismo cujo gene é o produto dos genes originais, garantindo a comutatividade do diagrama.
 
-\textbf{Lei dual da recursividade mútua (Fokkinga dual)}:
+\subsubsection*{Diagrama do Anamorfismo}
 
-Partindo da definição de anamorfismo e da recursividade mútua para funções
-mutuamente recursivas |f| e |g|:
+O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de streams |(Stream a, Stream a)| e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
 
 \begin{eqnarray*}
-\start
-|either f g = anaStream gene|
-\just\equiv{ definição de anamorfismo }
-|either f g = Cons . (id >< anaStream gene) . gene|
-\just\equiv{ lei de Leibniz }
-|lcbr(f = Cons . (id >< anaStream gene) . gene . i1)(g = Cons . (id >< anaStream gene) . gene . i2)|
-\just\equiv{ definição de |outStream| }
-|lcbr(outStream . f = (id >< anaStream gene) . gene . i1)(outStream . g = (id >< anaStream gene) . gene . i2)|
-\just\equiv{ funtor de |Stream|: |fF h = id >< h| }
-|lcbr(outStream . f = fF (either f g) . h)(outStream . g = fF (either f g) . k)|
-\qed
-\end{eqnarray*}
-
-onde |gene . i1 = h| e |gene . i2 = k|.
-
-\textbf{Aplicação ao problema}:
-
-A função |fair_merge| já está definida como:
-\begin{spec}
-fair_merge = either h k where
-   h (Cons(x,xs), y) = Cons(x , k(xs,y))
-   k (x, Cons(y,ys)) = Cons(y , h(x,ys))
-\end{spec}
-
-Agora precisamos encontrar o gene tal que |fair_merge = anaStream gene|.
-
-Calculemos |outStream . h|:
-\begin{spec}
-outStream . h = outStream . Cons . split x (k . split xs y)
-              = split x (k . split xs y)
-\end{spec}
-
-E |outStream . k|:
-\begin{spec}
-outStream . k = outStream . Cons . split y (h . split x ys)
-              = split y (h . split x ys)
-\end{spec}
-
-O diagrama do anamorfismo é:
-\begin{eqnarray*}
-\xymatrix@@C=1cm{
-    |(Stream a >< Stream a) + (Stream a >< Stream a)|
-           \ar[d]_-{|either h k|}
+\xymatrix@@C=3cm@@R=1.5cm{
+    |Stream a|
+           \ar[r]^-{|outStream|}
 &
-    |a >< ((Stream a >< Stream a) + (Stream a >< Stream a))|
-           \ar[d]^{|id >< either h k|}
-           \ar[l]_-{|gene|}
+    |a \times Stream a|
 \\
-     |Stream a|
+    |(Stream a, Stream a)|
+           \ar[u]^-{|fairMerge|}
+           \ar[r]_-{|gene|}
 &
-     |a >< Stream a|
-           \ar[l]^-{|Cons|}
+    |a \times (Stream a, Stream a)|
+           \ar[u]_-{|id \times fairMerge|}
 }
 \end{eqnarray*}
 
+
+\textbf{Análise do Gene:}
+O gene do |fairMerge| recebe duas streams |(s1, s2)|. Ele utiliza o |outStream| na primeira para obter a cabeça |h| e a cauda |t|, e devolve o par |(h, (s2, t))|. Note-se a inversão de |s2| com |t|, que é o que garante a alternância entre as estradas (Braga e Porto) em cada iteração.
+
+\subsubsection*{Implementação}
+
 \begin{code}
--- Coin flip distribution
-coinFlip :: Dist Bool
-coinFlip = D [(True, 0.5), (False, 0.5)]
 
--- Two consecutive flips
-twoFlips :: Dist (Bool, Bool)
-twoFlips = do
-  first <- coinFlip
-  second <- coinFlip
-  return (first, second)
-
--- Probability of getting at least one heads
-probAtLeastOneHeads :: Float
-probAtLeastOneHeads = sum [p | ((h1, h2), p) <- unD twoFlips, h1 || h2]
-
--- Fair merge as anamorphism
-fair_merge' = anaStream gene
+fairMerge :: (Stream a, Stream a) -> Stream a
+fairMerge = anaStream gene
   where
-    gene = either geneL geneR
-    geneL (Cons(x,xs), y) = (x, Right(xs, y))
-    geneR (x, Cons(y,ys)) = (y, Left(x, ys))
+    gene (s1, s2) = let (h, t) = outStream s1 
+                    in (h, (s2, t))
+
+fairMergeM :: (Double, (Stream a, Stream a)) -> Stream a
+fairMergeM = anaStream geneM
+  where
+    geneM (p, (s1, s2)) = 
+      let r = 0.5 
+      in if p > r 
+         then let (h, t) = outStream s1 in (h, (p, (s2, t)))
+         else let (h, t) = outStream s2 in (h, (p, (s1, t)))
 \end{code}
 
-% ----------------- Solução do problema 4 ---------------------------------------%
 \subsection*{Problema 4}
 
-\subsubsection*{Resolução}
+\subsubsection*{Justificação Teórica: Máquinas de Mealy como Anamorfismos}
 
-O problema pede para definir um gene para um catamorfismo probabilístico de listas
-que modela a transmissão de uma mensagem com possíveis falhas.
+As Máquinas de Mealy são transdutores de estados que modelam sistemas reativos, onde a saída depende tanto do estado atual como da entrada recebida. Diferente de um sistema fechado, uma Máquina de Mealy é inerentemente coindutiva, sendo modelada como um anamorfismo que produz uma sequência potencialmente infinita de respostas a estímulos externos.
 
-\textbf{Análise do problema}:
+Formalmente, o comportamento de uma máquina com estados em $S$, entradas em $I$ e saídas em $O$ é definido pelo par de funções:
 \begin{itemize}
-\item Cada palavra pode ser transmitida corretamente (95\%) ou perdida (5\%)
-\item No fim, o código "stop" é enviado com sucesso (90\%) ou falha (10\%)
+    \item $out : S \times I \to O$ (produção de output)
+    \item $next : S \times I \to S$ (transição de estado)
 \end{itemize}
 
-O diagrama do catamorfismo probabilístico é:
+Pela lei da exponenciação (currying), este par de funções é isomorfo a uma única função de transição, o gene do anamorfismo: $g : S \to (I \to O \times S)$. Este gene mapeia o estado atual para uma função que, dada uma entrada, determina o resultado imediato e o próximo estado da máquina.
+
+\subsubsection*{Diagrama do Anamorfismo (Mealy)}
+
+O diagrama seguinte ilustra a estrutura da máquina. Note-se que o tipo de saída do anamorfismo é ele próprio uma função ($I \to O \times \dots$), caracterizando a natureza interativa do sistema:
+
 \begin{eqnarray*}
-\xymatrix@@C=1cm{
-    |[String]|
-           \ar[d]_-{|transmitir|}
-&
-    |1 + String >< [String]|
-           \ar[d]^{|id + id >< transmitir|}
-           \ar[l]_-{|inList|}
+\xymatrix@@C=3cm@@R=1.5cm{
+    |S| 
+           \ar[d]_-{|mealy|} 
+           \ar[r]^-{|g|} 
+& 
+    |I \to O \times S| 
+           \ar[d]^{|id \to id \times mealy|} 
 \\
-     |Dist [String]|
-&
-     |1 + String >< Dist [String]|
-           \ar[l]^-{|gene|}
+    |Mealy I O| 
+& 
+    |I \to O \times Mealy I O| 
+           \ar[l]^-{|inMealy|}
 }
 \end{eqnarray*}
 
-O gene deve processar:
-\begin{itemize}
-\item Lista vazia (|Left ()|): adiciona "stop" com probabilidade 90\%, ou lista vazia com 10\%
-\item Lista não vazia (|Right (palavra, resto)|): 
-  \begin{itemize}
-  \item com 95\% mantém a palavra: |palavra : resto|
-  \item com 5\% perde a palavra: |resto|
-  \end{itemize}
-\end{itemize}
+
+
+\subsubsection*{Implementação: Fluxo de Tráfego em Braga}
+
+No contexto da rede viária, modelamos uma avenida onde o estado é a cor do semáforo (|Bool|). O gene $|g|$ dita que, se o semáforo estiver verde (|True|), a entrada de carros é integralmente transferida para a saída. Se estiver vermelho (|False|), a saída é uma lista vazia, simulando a retenção do tráfego. Em cada passo, o estado alterna, garantindo a fluidez alternada do sistema.
 
 \begin{code}
-
-pcataList :: (Either () (a, b) -> Dist b) -> [a] -> Dist b
-pcataList g [] = g (Left ())
-pcataList g (x:xs) = g (Right (x, pcataList g xs))
-
-gene :: Either () (String, Dist [String]) -> Dist [String]
-gene = either addStop transmitWord
+avenidaMealy :: Bool -> Mealy [Carro] [Carro]
+avenidaMealy = anaMealy gene
   where
-    addStop () = D [(["stop"], 0.9), ([], 0.1)]
-    transmitWord (word, rest) = do
-      transmitted <- D [(True, 0.95), (False, 0.05)]
-      restWords <- rest
-      return (if transmitted then word : restWords else restWords)
-
+    gene verde entrada = 
+      if verde 
+      then (entrada, not verde) 
+      else ([], not verde)      
+transitoBraga :: Mealy [Carro] [Carro]
+transitoBraga = avenidaMealy True . avenidaMealy False
 \end{code}
-
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%
 
