@@ -127,7 +127,7 @@
 
 \group{G99}
 \studentA{107293}{Hugo Ferreira Soares }
-\studentB{106}{Francisco Ribeiro Martins }
+\studentB{106902}{Francisco Ribeiro Martins }
 
 %==============================================================================%
 
