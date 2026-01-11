@@ -126,9 +126,8 @@
 %====== DEFINIR GRUPO E ELEMENTOS =============================================%
 
 \group{G99}
-\studentA{xxxxxx}{Nome }
-\studentB{xxxxxx}{Nome }
-\studentC{xxxxxx}{Nome }
+\studentA{107293}{Hugo Ferreira Soares }
+\studentB{106}{Francisco Ribeiro Martins }
 
 %==============================================================================%
 
@@ -683,8 +682,8 @@ o gene coloca |a| numa lista unitária (nível 0) e utiliza a função |zipWithP
 
 O diagrama do catamorfismo é o seguinte:
 
-\begin{eqnarray*}
-\xymatrix@@C=3cm@@R=1.5cm{
+\[
+\xymatrix{
     |BTree a|
            \ar[r]^-{|outBTree|}
            \ar[d]_-{|levels|}
@@ -697,7 +696,7 @@ O diagrama do catamorfismo é o seguinte:
      |1 + a >< ([[a]] >< [[a]])|
            \ar[l]^-{|glevels|}
 }
-\end{eqnarray*}
+\]
 
 \subsubsection*{2. Anamorfismo de travessia (|bft|)}
 
@@ -717,18 +716,16 @@ da fila (comportamento FIFO), garantindo a ordem por níveis.
 
 \end{itemize}
 
-\begin{code} 
+\begin{code}
+glevels = either (const []) (\(a, (ls, rs)) -> [a] : zipWithPlus ls rs)
+  where zipWithPlus [] ys = ys
+        zipWithPlus xs [] = xs
+        zipWithPlus (x:xs) (y:ys) = (x ++ y) : zipWithPlus xs ys
 
-glevels = either (const []) (\(a, (ls, rs)) -> [a] : zipWithPlus ls rs) 
-     where zipWithPlus [] ys = ys 
-           zipWithPlus xs [] = xs 
-           zipWithPlus (x:xs) (y:ys) = (x ++ y) : zipWithPlus xs ys
-
-bft t = anaList geneBFT [t] 
-     where geneBFT [] = Left () 
-           geneBFT (Empty : ts) = geneBFT ts 
-           geneBFT (Node (a, (l, r)) : ts) = Right (a, ts ++ [l, r])
-
+bft t = anaList geneBFT [t]
+  where geneBFT [] = Left ()
+        geneBFT (Empty : ts) = geneBFT ts
+        geneBFT (Node (a, (l, r)) : ts) = Right (a, ts ++ [l, r])
 \end{code}
 
 \subsection*{Problema 2}
@@ -751,8 +748,8 @@ a_{i} = \frac{h_{i-1}}{k_{i-1}}
 
 O catamorfismo de números naturais (|worker|) evolui conforme o seguinte diagrama:
 
-\begin{eqnarray*}
-\xymatrix@@C=3cm@@R=1.5cm{
+\[
+\xymatrix{
     |Nat0|
            \ar[r]^-{|outNat|}
            \ar[d]_-{|worker|}
@@ -765,7 +762,7 @@ O catamorfismo de números naturais (|worker|) evolui conforme o seguinte diagra
      |1 + [Double]|
            \ar[l]^-{|either (const (start x)) (loop x)|}
 }
-\end{eqnarray*}
+\]
 
 
 
@@ -784,8 +781,6 @@ O |wrapper| (função |head|) extrai o primeiro elemento da lista, que é a soma
 \subsubsection*{Implementação}
 
 \begin{code}
-
-
 f :: Double -> Int -> Double
 f x n = wrapper (worker x n)
   where
@@ -793,7 +788,6 @@ f x n = wrapper (worker x n)
     worker x = cataNat (either (const (start x)) (loop x))
     start x = [x, x^3, 6, 20, 22]
     loop x [s, h, k, j, m] = [s + h/k, x^2 * h, k * j, j + m, m + 8]
-
 
 sumList :: Num a => [a] -> a
 sumList = cataList (either (const 0) (uncurry (+)))
@@ -815,21 +809,21 @@ Para Streams (listas infinitas), o anamorfismo é definido pelo gene |g : S -> A
 
 O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de streams |(Stream a, Stream a)| e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
 
-\begin{eqnarray*}
-\xymatrix@@C=3cm@@R=1.5cm{
+\[
+\xymatrix{
     |Stream a|
            \ar[r]^-{|outStream|}
 &
-    |a \times Stream a|
+    |a >< Stream a|
 \\
     |(Stream a, Stream a)|
            \ar[u]^-{|fairMerge|}
            \ar[r]_-{|gene|}
 &
-    |a \times (Stream a, Stream a)|
-           \ar[u]_-{|id \times fairMerge|}
+    |a >< (Stream a, Stream a)|
+           \ar[u]_-{|id >< fairMerge|}
 }
-\end{eqnarray*}
+\]
 
 
 \textbf{Análise do Gene:}
@@ -838,19 +832,18 @@ O gene do |fairMerge| recebe duas streams |(s1, s2)|. Ele utiliza o |outStream| 
 \subsubsection*{Implementação}
 
 \begin{code}
-
 fairMerge :: (Stream a, Stream a) -> Stream a
 fairMerge = anaStream gene
   where
-    gene (s1, s2) = let (h, t) = outStream s1 
+    gene (s1, s2) = let (h, t) = outStream s1
                     in (h, (s2, t))
 
 fairMergeM :: (Double, (Stream a, Stream a)) -> Stream a
 fairMergeM = anaStream geneM
   where
-    geneM (p, (s1, s2)) = 
-      let r = 0.5 
-      in if p > r 
+    geneM (p, (s1, s2)) =
+      let r = 0.5
+      in if p > r
          then let (h, t) = outStream s1 in (h, (p, (s2, t)))
          else let (h, t) = outStream s2 in (h, (p, (s1, t)))
 \end{code}
@@ -873,21 +866,21 @@ Pela lei da exponenciação (currying), este par de funções é isomorfo a uma 
 
 O diagrama seguinte ilustra a estrutura da máquina. Note-se que o tipo de saída do anamorfismo é ele próprio uma função ($I \to O \times \dots$), caracterizando a natureza interativa do sistema:
 
-\begin{eqnarray*}
-\xymatrix@@C=3cm@@R=1.5cm{
+\[
+\xymatrix{
     |S| 
            \ar[d]_-{|mealy|} 
            \ar[r]^-{|g|} 
 & 
-    |I \to O \times S| 
-           \ar[d]^{|id \to id \times mealy|} 
+    |I -> O >< S| 
+           \ar[d]^{|id -> id >< mealy|} 
 \\
     |Mealy I O| 
 & 
-    |I \to O \times Mealy I O| 
+    |I -> O >< Mealy I O| 
            \ar[l]^-{|inMealy|}
 }
-\end{eqnarray*}
+\]
 
 
 
@@ -899,10 +892,11 @@ No contexto da rede viária, modelamos uma avenida onde o estado é a cor do sem
 avenidaMealy :: Bool -> Mealy [Carro] [Carro]
 avenidaMealy = anaMealy gene
   where
-    gene verde entrada = 
-      if verde 
-      then (entrada, not verde) 
-      else ([], not verde)      
+    gene verde entrada =
+      if verde
+      then (entrada, not verde)
+      else ([], not verde)
+
 transitoBraga :: Mealy [Carro] [Carro]
 transitoBraga = avenidaMealy True . avenidaMealy False
 \end{code}

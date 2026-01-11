@@ -269,9 +269,8 @@
 %====== DEFINIR GRUPO E ELEMENTOS =============================================%
 
 \group{G99}
-\studentA{xxxxxx}{Nome }
-\studentB{xxxxxx}{Nome }
-\studentC{xxxxxx}{Nome }
+\studentA{107293}{Hugo Ferreira Soares }
+\studentB{106}{Francisco Ribeiro Martins }
 
 %==============================================================================%
 
@@ -913,8 +912,8 @@ o gene coloca \ensuremath{\Varid{a}} numa lista unitária (nível 0) e utiliza a
 
 O diagrama do catamorfismo é o seguinte:
 
-\begin{eqnarray*}
-\xymatrix@C=3cm@R=1.5cm{
+\[
+\xymatrix{
     \ensuremath{\Conid{BTree}\;\Varid{a}}
            \ar[r]^-{\ensuremath{\Varid{outBTree}}}
            \ar[d]_-{\ensuremath{\Varid{levels}}}
@@ -927,7 +926,7 @@ O diagrama do catamorfismo é o seguinte:
      \ensuremath{\mathrm{1}\mathbin{+}\Varid{a}\times([\mskip1.5mu [\mskip1.5mu \Varid{a}\mskip1.5mu]\mskip1.5mu]\times[\mskip1.5mu [\mskip1.5mu \Varid{a}\mskip1.5mu]\mskip1.5mu])}
            \ar[l]^-{\ensuremath{\Varid{glevels}}}
 }
-\end{eqnarray*}
+\]
 
 \subsubsection*{2. Anamorfismo de travessia (\ensuremath{\Varid{bft}})}
 
@@ -949,30 +948,30 @@ da fila (comportamento FIFO), garantindo a ordem por níveis.
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{6}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{12}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{3}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
 \>[B]{}\Varid{glevels}\mathrel{=}\alt{\underline{[\mskip1.5mu \mskip1.5mu]}}{\lambda (\Varid{a},(\Varid{ls},\Varid{rs}))\to [\mskip1.5mu \Varid{a}\mskip1.5mu]\mathbin{:}\Varid{zipWithPlus}\;\Varid{ls}\;\Varid{rs}}{}\<[E]%
 \\
-\>[B]{}\hsindent{6}{}\<[6]%
-\>[6]{}\mathbf{where}\;\Varid{zipWithPlus}\;[\mskip1.5mu \mskip1.5mu]\;\Varid{ys}\mathrel{=}\Varid{ys}{}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{where}\;\Varid{zipWithPlus}\;[\mskip1.5mu \mskip1.5mu]\;\Varid{ys}\mathrel{=}\Varid{ys}{}\<[E]%
 \\
-\>[6]{}\hsindent{6}{}\<[12]%
-\>[12]{}\Varid{zipWithPlus}\;\Varid{xs}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}\Varid{xs}{}\<[E]%
+\>[3]{}\hsindent{6}{}\<[9]%
+\>[9]{}\Varid{zipWithPlus}\;\Varid{xs}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}\Varid{xs}{}\<[E]%
 \\
-\>[6]{}\hsindent{6}{}\<[12]%
-\>[12]{}\Varid{zipWithPlus}\;(\Varid{x}\mathbin{:}\Varid{xs})\;(\Varid{y}\mathbin{:}\Varid{ys})\mathrel{=}(\Varid{x}\mathbin{+\!\!+}\Varid{y})\mathbin{:}\Varid{zipWithPlus}\;\Varid{xs}\;\Varid{ys}{}\<[E]%
+\>[3]{}\hsindent{6}{}\<[9]%
+\>[9]{}\Varid{zipWithPlus}\;(\Varid{x}\mathbin{:}\Varid{xs})\;(\Varid{y}\mathbin{:}\Varid{ys})\mathrel{=}(\Varid{x}\mathbin{+\!\!+}\Varid{y})\mathbin{:}\Varid{zipWithPlus}\;\Varid{xs}\;\Varid{ys}{}\<[E]%
 \\[\blanklineskip]%
 \>[B]{}\Varid{bft}\;\Varid{t}\mathrel{=}\anaList{\Varid{geneBFT}}\;[\mskip1.5mu \Varid{t}\mskip1.5mu]{}\<[E]%
 \\
-\>[B]{}\hsindent{6}{}\<[6]%
-\>[6]{}\mathbf{where}\;\Varid{geneBFT}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}i_1\;(){}\<[E]%
+\>[B]{}\hsindent{3}{}\<[3]%
+\>[3]{}\mathbf{where}\;\Varid{geneBFT}\;[\mskip1.5mu \mskip1.5mu]\mathrel{=}i_1\;(){}\<[E]%
 \\
-\>[6]{}\hsindent{6}{}\<[12]%
-\>[12]{}\Varid{geneBFT}\;(\Conid{Empty}\mathbin{:}\Varid{ts})\mathrel{=}\Varid{geneBFT}\;\Varid{ts}{}\<[E]%
+\>[3]{}\hsindent{6}{}\<[9]%
+\>[9]{}\Varid{geneBFT}\;(\Conid{Empty}\mathbin{:}\Varid{ts})\mathrel{=}\Varid{geneBFT}\;\Varid{ts}{}\<[E]%
 \\
-\>[6]{}\hsindent{6}{}\<[12]%
-\>[12]{}\Varid{geneBFT}\;(\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))\mathbin{:}\Varid{ts})\mathrel{=}i_2\;(\Varid{a},\Varid{ts}\mathbin{+\!\!+}[\mskip1.5mu \Varid{l},\Varid{r}\mskip1.5mu]){}\<[E]%
+\>[3]{}\hsindent{6}{}\<[9]%
+\>[9]{}\Varid{geneBFT}\;(\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))\mathbin{:}\Varid{ts})\mathrel{=}i_2\;(\Varid{a},\Varid{ts}\mathbin{+\!\!+}[\mskip1.5mu \Varid{l},\Varid{r}\mskip1.5mu]){}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
 
@@ -996,8 +995,8 @@ a_{i} = \frac{h_{i-1}}{k_{i-1}}
 
 O catamorfismo de números naturais (\ensuremath{\Varid{worker}}) evolui conforme o seguinte diagrama:
 
-\begin{eqnarray*}
-\xymatrix@C=3cm@R=1.5cm{
+\[
+\xymatrix{
     \ensuremath{\N_0}
            \ar[r]^-{\ensuremath{\Varid{outNat}}}
            \ar[d]_-{\ensuremath{\Varid{worker}}}
@@ -1010,7 +1009,7 @@ O catamorfismo de números naturais (\ensuremath{\Varid{worker}}) evolui conform
      \ensuremath{\mathrm{1}\mathbin{+}[\mskip1.5mu \Conid{Double}\mskip1.5mu]}
            \ar[l]^-{\ensuremath{\alt{\underline{\Varid{start}\;\Varid{x}}}{\Varid{loop}\;\Varid{x}}}}
 }
-\end{eqnarray*}
+\]
 
 
 
@@ -1076,21 +1075,21 @@ Para Streams (listas infinitas), o anamorfismo é definido pelo gene \ensuremath
 
 O \ensuremath{\Varid{fairMerge}} alterna entre duas streams. O estado do anamorfismo é o par de streams \ensuremath{(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})} e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
 
-\begin{eqnarray*}
-\xymatrix@C=3cm@R=1.5cm{
+\[
+\xymatrix{
     \ensuremath{\Conid{Stream}\;\Varid{a}}
            \ar[r]^-{\ensuremath{\mathsf{out}}}
 &
-    \ensuremath{\Varid{a}\lambda \Varid{times}\;\Conid{Stream}\;\Varid{a}}
+    \ensuremath{\Varid{a}\times\Conid{Stream}\;\Varid{a}}
 \\
     \ensuremath{(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})}
            \ar[u]^-{\ensuremath{\Varid{fairMerge}}}
            \ar[r]_-{\ensuremath{\Varid{gene}}}
 &
-    \ensuremath{\Varid{a}\lambda \Varid{times}\;(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})}
-           \ar[u]_-{\ensuremath{\Varid{id}\lambda \Varid{times}\;\Varid{fairMerge}}}
+    \ensuremath{\Varid{a}\times(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})}
+           \ar[u]_-{\ensuremath{\Varid{id}\times\Varid{fairMerge}}}
 }
-\end{eqnarray*}
+\]
 
 
 \textbf{Análise do Gene:}
@@ -1161,21 +1160,21 @@ Pela lei da exponenciação (currying), este par de funções é isomorfo a uma 
 
 O diagrama seguinte ilustra a estrutura da máquina. Note-se que o tipo de saída do anamorfismo é ele próprio uma função ($I \to O \times \dots$), caracterizando a natureza interativa do sistema:
 
-\begin{eqnarray*}
-\xymatrix@C=3cm@R=1.5cm{
+\[
+\xymatrix{
     \ensuremath{\Conid{S}} 
            \ar[d]_-{\ensuremath{\Varid{mealy}}} 
            \ar[r]^-{\ensuremath{\Varid{g}}} 
 & 
-    \ensuremath{\Conid{I}\lambda \Varid{to}\;\Conid{O}\lambda \Varid{times}\;\Conid{S}} 
-           \ar[d]^{\ensuremath{\Varid{id}\lambda \Varid{to}\;\Varid{id}\lambda \Varid{times}\;\Varid{mealy}}} 
+    \ensuremath{\Conid{I}\to \Conid{O}\times\Conid{S}} 
+           \ar[d]^{\ensuremath{\Varid{id}\to \Varid{id}\times\Varid{mealy}}} 
 \\
     \ensuremath{\Conid{Mealy}\;\Conid{I}\;\Conid{O}} 
 & 
-    \ensuremath{\Conid{I}\lambda \Varid{to}\;\Conid{O}\lambda \Varid{times}\;\Conid{Mealy}\;\Conid{I}\;\Conid{O}} 
+    \ensuremath{\Conid{I}\to \Conid{O}\times\Conid{Mealy}\;\Conid{I}\;\Conid{O}} 
            \ar[l]^-{\ensuremath{\Varid{inMealy}}}
 }
-\end{eqnarray*}
+\]
 
 
 
@@ -1207,7 +1206,7 @@ No contexto da rede viária, modelamos uma avenida onde o estado é a cor do sem
 \\
 \>[5]{}\hsindent{2}{}\<[7]%
 \>[7]{}\mathbf{else}\;([\mskip1.5mu \mskip1.5mu],\neg \;\Varid{verde}){}\<[E]%
-\\
+\\[\blanklineskip]%
 \>[B]{}\Varid{transitoBraga}\mathbin{::}\Conid{Mealy}\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]{}\<[E]%
 \\
 \>[B]{}\Varid{transitoBraga}\mathrel{=}\Varid{avenidaMealy}\;\Conid{True}\comp \Varid{avenidaMealy}\;\Conid{False}{}\<[E]%
