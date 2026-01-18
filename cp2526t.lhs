@@ -698,6 +698,17 @@ O diagrama do catamorfismo é o seguinte:
 }
 \]
 
+glevels = [[],comb]
+
+
+Onde comb(a,(L,D))=[a]:zipWith (++) L D.
+\begin{itemize} 
+
+\item |[a]| cria o primeiro nível (a raiz).
+\item zipWith (++) junta o nível n da esquerda com o nível n da direita para formar o novo nível n+1.
+
+\end{itemize}
+
 \subsubsection*{2. Anamorfismo de travessia (|bft|)}
 
 Para a função |bft|, utilizamos a estratégia sugerida por Okasaki, baseada numa fila (|queue|).

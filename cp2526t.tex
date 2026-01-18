@@ -270,7 +270,7 @@
 
 \group{G99}
 \studentA{107293}{Hugo Ferreira Soares }
-\studentB{106}{Francisco Ribeiro Martins }
+\studentB{106902}{Francisco Ribeiro Martins }
 
 %==============================================================================%
 
@@ -927,6 +927,17 @@ O diagrama do catamorfismo é o seguinte:
            \ar[l]^-{\ensuremath{\Varid{glevels}}}
 }
 \]
+
+glevels = [[],comb]
+
+
+Onde comb(a,(L,D))=[a]:zipWith (++) L D.
+\begin{itemize} 
+
+\item \ensuremath{[\mskip1.5mu \Varid{a}\mskip1.5mu]} cria o primeiro nível (a raiz).
+\item zipWith (++) junta o nível n da esquerda com o nível n da direita para formar o novo nível n+1.
+
+\end{itemize}
 
 \subsubsection*{2. Anamorfismo de travessia (\ensuremath{\Varid{bft}})}
 
