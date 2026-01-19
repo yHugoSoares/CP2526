@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.12.27)  18 JAN 2026 14:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023/Debian) (preloaded format=pdflatex 2025.12.27)  19 JAN 2026 20:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1482,17 +1482,12 @@ Overfull \hbox (128.0374pt too wide) has occurred while \output is active
 [11] <xymatrix 2x2 191>
 \openout7 = `cp2526t.ptb'.
 
-
+ (./cp2526t.ind
 Overfull \hbox (128.0374pt too wide) has occurred while \output is active
  [][]| 
  []
 
-[12] (./cp2526t.ind
-Overfull \hbox (128.0374pt too wide) has occurred while \output is active
- [][]| 
- []
-
-[13] [14
+[12] [13
 
 
 ]) (./cp2526t.bbl
@@ -1505,7 +1500,7 @@ Overfull \hbox (128.0374pt too wide) has occurred while \output is active
  [][]| 
  []
 
-[15
+[14
 
 ] (./cp2526t.aux)
  ***********
@@ -1523,8 +1518,8 @@ Package rerunfilecheck Info: File `cp2526t.out' has not changed.
 (rerunfilecheck)             Checksum: 1D188B8CDF969C53DBC74774FEC30481;1480.
  ) 
 Here is how much of TeX's memory you used:
- 47845 strings out of 476106
- 1047277 string characters out of 5793932
+ 47844 strings out of 476106
+ 1047270 string characters out of 5793932
  1945975 words of memory out of 5000000
  69134 multiletter control sequences out of 15000+600000
  814834 words of font info for 155 fonts, out of 8000000 for 9000
@@ -1550,10 +1545,10 @@ s/msbm10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/stmaryrd/stmary1
 0.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/stmaryrd/stmary9.pfb></
 usr/share/texlive/texmf-dist/fonts/type1/public/xypic/xyatip10.pfb></usr/share/
 texlive/texmf-dist/fonts/type1/public/xypic/xybtip10.pfb>
-Output written on cp2526t.pdf (16 pages, 1076235 bytes).
+Output written on cp2526t.pdf (15 pages, 1075062 bytes).
 PDF statistics:
- 356 PDF objects out of 1000 (max. 8388607)
- 283 compressed objects within 3 object streams
- 35 named destinations out of 1000 (max. 500000)
+ 352 PDF objects out of 1000 (max. 8388607)
+ 280 compressed objects within 3 object streams
+ 34 named destinations out of 1000 (max. 500000)
  102 words of extra memory for PDF output out of 10000 (max. 10000000)
 

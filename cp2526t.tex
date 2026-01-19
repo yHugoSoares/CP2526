@@ -1155,72 +1155,68 @@ O gene do \ensuremath{\Varid{fairMerge}} recebe duas streams \ensuremath{(\Varid
 
 \subsection*{Problema 4}
 
-\subsubsection*{Justificação Teórica: Máquinas de Mealy como Anamorfismos}
+\subsubsection*{Resolução Teórica}
 
-As Máquinas de Mealy são transdutores de estados que modelam sistemas reativos, onde a saída depende tanto do estado atual como da entrada recebida. Diferente de um sistema fechado, uma Máquina de Mealy é inerentemente coindutiva, sendo modelada como um anamorfismo que produz uma sequência potencialmente infinita de respostas a estímulos externos.
+O problema modela um aparelho de telegrafia avariado usando um catamorfismo probabilístico \ensuremath{\Varid{pcataList}\;\Varid{gene}}. O gene deve processar dois casos:
 
-Formalmente, o comportamento de uma máquina com estados em $S$, entradas em $I$ e saídas em $O$ é definido pelo par de funções:
 \begin{itemize}
-    \item $out : S \times I \to O$ (produção de output)
-    \item $next : S \times I \to S$ (transição de estado)
+\item \textbf{Caso base} (lista vazia): O aparelho envia o código \ensuremath{\text{\ttfamily \char34 stop\char34}} com 90\% de probabilidade, ou não envia nada (lista vazia) com 10\% de probabilidade (falha).
+
+\item \textbf{Caso recursivo} (palavra \ensuremath{\Varid{w}} e resto \ensuremath{\Varid{ms}}): A palavra é mantida com 95\% de probabilidade (\ensuremath{\Varid{w}\mathbin{:}\Varid{msg}}), ou perde-se com 5\% de probabilidade (\ensuremath{\Varid{msg}}).
 \end{itemize}
 
-Pela lei da exponenciação (currying), este par de funções é isomorfo a uma única função de transição, o gene do anamorfismo: $g : S \to (I \to O \times S)$. Este gene mapeia o estado atual para uma função que, dada uma entrada, determina o resultado imediato e o próximo estado da máquina.
-
-\subsubsection*{Diagrama do Anamorfismo (Mealy)}
-
-O diagrama seguinte ilustra a estrutura da máquina. Note-se que o tipo de saída do anamorfismo é ele próprio uma função ($I \to O \times \dots$), caracterizando a natureza interativa do sistema:
+\subsubsection*{Diagrama do Catamorfismo}
 
 \[
 \xymatrix{
-    \ensuremath{\Conid{S}} 
-           \ar[d]_-{\ensuremath{\Varid{mealy}}} 
-           \ar[r]^-{\ensuremath{\Varid{g}}} 
-& 
-    \ensuremath{\Conid{I}\to \Conid{O}\times\Conid{S}} 
-           \ar[d]^{\ensuremath{\Varid{id}\to \Varid{id}\times\Varid{mealy}}} 
+    \ensuremath{[\mskip1.5mu \Conid{String}\mskip1.5mu]}
+           \ar[r]^-{\ensuremath{\Varid{outList}}}
+           \ar[d]_-{\ensuremath{\Varid{transmitir}}}
+&
+    \ensuremath{\mathrm{1}\mathbin{+}\Conid{String}\times[\mskip1.5mu \Conid{String}\mskip1.5mu]}
+           \ar[d]^{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\times\Varid{transmitir}}}
 \\
-    \ensuremath{\Conid{Mealy}\;\Conid{I}\;\Conid{O}} 
-& 
-    \ensuremath{\Conid{I}\to \Conid{O}\times\Conid{Mealy}\;\Conid{I}\;\Conid{O}} 
-           \ar[l]^-{\ensuremath{\Varid{inMealy}}}
+     \ensuremath{\fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]}
+&
+     \ensuremath{\mathrm{1}\mathbin{+}\Conid{String}\times\fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]}
+           \ar[l]^-{\ensuremath{\Varid{gene}}}
 }
 \]
 
+\subsubsection*{Cálculo das Probabilidades}
 
+Para a mensagem \ensuremath{\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~hoje\char34}\mathrel{=}[\mskip1.5mu \text{\ttfamily \char34 Vamos\char34},\text{\ttfamily \char34 atacar\char34},\text{\ttfamily \char34 hoje\char34}\mskip1.5mu]}:
 
-\subsubsection*{Implementação: Fluxo de Tráfego em Braga}
+\begin{itemize}
+\item \textbf{Transmissão perfeita}: Manter as 3 palavras ($0.95^3 = 0.857375$) e enviar \ensuremath{\text{\ttfamily \char34 stop\char34}} ($0.9$):
+\[P(\text{perfeita}) = 0.857375 \times 0.9 = 0.7716 \text{ (77.16\%)}\]
 
-No contexto da rede viária, modelamos uma avenida onde o estado é a cor do semáforo (\ensuremath{\Conid{Bool}}). O gene $\ensuremath{\Varid{g}}$ dita que, se o semáforo estiver verde (\ensuremath{\Conid{True}}), a entrada de carros é integralmente transferida para a saída. Se estiver vermelho (\ensuremath{\Conid{False}}), a saída é uma lista vazia, simulando a retenção do tráfego. Em cada passo, o estado alterna, garantindo a fluidez alternada do sistema.
+\item \textbf{Perder "atacar"}: Manter "Vamos" ($0.95$), perder "atacar" ($0.05$), manter "hoje" ($0.95$), enviar \ensuremath{\text{\ttfamily \char34 stop\char34}} ($0.9$):
+\[P(\text{perder "atacar"}) = 0.95 \times 0.05 \times 0.95 \times 0.9 = 0.0406 \text{ (4.06\%)}\]
+
+\item \textbf{Todas as palavras mas sem "stop"}: Manter as 3 palavras ($0.857375$) e falhar \ensuremath{\text{\ttfamily \char34 stop\char34}} ($0.1$):
+\[P(\text{sem stop}) = 0.857375 \times 0.1 = 0.0857 \text{ (8.57\%)}\]
+\end{itemize}
+
+\subsubsection*{Implementação}
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{3}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{5}{@{}>{\hspre}l<{\hspost}@{}}%
-\column{7}{@{}>{\hspre}l<{\hspost}@{}}%
 \column{E}{@{}>{\hspre}l<{\hspost}@{}}%
-\>[B]{}\Varid{avenidaMealy}\mathbin{::}\Conid{Bool}\to \Conid{Mealy}\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]{}\<[E]%
+\>[B]{}\Varid{gene}\mathbin{::}()+(\Conid{String},\fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu])\to \fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]{}\<[E]%
 \\
-\>[B]{}\Varid{avenidaMealy}\mathrel{=}\Varid{anaMealy}\;\Varid{gene}{}\<[E]%
+\>[B]{}\Varid{gene}\mathrel{=}\alt{\Varid{pzero}}{\Varid{padd}}{}\<[E]%
 \\
 \>[B]{}\hsindent{3}{}\<[3]%
 \>[3]{}\mathbf{where}{}\<[E]%
 \\
 \>[3]{}\hsindent{2}{}\<[5]%
-\>[5]{}\Varid{gene}\;\Varid{verde}\;\Varid{entrada}\mathrel{=}{}\<[E]%
+\>[5]{}\Varid{pzero}\;()\mathrel{=}\Conid{D}\;[\mskip1.5mu ([\mskip1.5mu \text{\ttfamily \char34 stop\char34}\mskip1.5mu],\mathrm{0.9}),([\mskip1.5mu \mskip1.5mu],\mathrm{0.1})\mskip1.5mu]{}\<[E]%
 \\
-\>[5]{}\hsindent{2}{}\<[7]%
-\>[7]{}\mathbf{if}\;\Varid{verde}{}\<[E]%
-\\
-\>[5]{}\hsindent{2}{}\<[7]%
-\>[7]{}\mathbf{then}\;(\Varid{entrada},\neg \;\Varid{verde}){}\<[E]%
-\\
-\>[5]{}\hsindent{2}{}\<[7]%
-\>[7]{}\mathbf{else}\;([\mskip1.5mu \mskip1.5mu],\neg \;\Varid{verde}){}\<[E]%
-\\[\blanklineskip]%
-\>[B]{}\Varid{transitoBraga}\mathbin{::}\Conid{Mealy}\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]\;[\mskip1.5mu \Conid{Carro}\mskip1.5mu]{}\<[E]%
-\\
-\>[B]{}\Varid{transitoBraga}\mathrel{=}\Varid{avenidaMealy}\;\Conid{True}\comp \Varid{avenidaMealy}\;\Conid{False}{}\<[E]%
+\>[3]{}\hsindent{2}{}\<[5]%
+\>[5]{}\Varid{padd}\;(\Varid{w},\Conid{D}\;\Varid{ms})\mathrel{=}\Conid{D}\;[\mskip1.5mu (\Varid{w}\mathbin{:}\Varid{msg},\mathrm{0.95}\mathbin{*}\Varid{p}),(\Varid{msg},\mathrm{0.05}\mathbin{*}\Varid{p})\mid (\Varid{msg},\Varid{p})\leftarrow \Varid{ms}\mskip1.5mu]{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
 

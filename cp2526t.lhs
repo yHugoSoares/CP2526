@@ -861,55 +861,57 @@ fairMergeM = anaStream geneM
 
 \subsection*{Problema 4}
 
-\subsubsection*{Justificação Teórica: Máquinas de Mealy como Anamorfismos}
+\subsubsection*{Resolução Teórica}
 
-As Máquinas de Mealy são transdutores de estados que modelam sistemas reativos, onde a saída depende tanto do estado atual como da entrada recebida. Diferente de um sistema fechado, uma Máquina de Mealy é inerentemente coindutiva, sendo modelada como um anamorfismo que produz uma sequência potencialmente infinita de respostas a estímulos externos.
+O problema modela um aparelho de telegrafia avariado usando um catamorfismo probabilístico |pcataList gene|. O gene deve processar dois casos:
 
-Formalmente, o comportamento de uma máquina com estados em $S$, entradas em $I$ e saídas em $O$ é definido pelo par de funções:
 \begin{itemize}
-    \item $out : S \times I \to O$ (produção de output)
-    \item $next : S \times I \to S$ (transição de estado)
+\item \textbf{Caso base} (lista vazia): O aparelho envia o código |"stop"| com 90\% de probabilidade, ou não envia nada (lista vazia) com 10\% de probabilidade (falha).
+
+\item \textbf{Caso recursivo} (palavra |w| e resto |ms|): A palavra é mantida com 95\% de probabilidade (|w:msg|), ou perde-se com 5\% de probabilidade (|msg|).
 \end{itemize}
 
-Pela lei da exponenciação (currying), este par de funções é isomorfo a uma única função de transição, o gene do anamorfismo: $g : S \to (I \to O \times S)$. Este gene mapeia o estado atual para uma função que, dada uma entrada, determina o resultado imediato e o próximo estado da máquina.
-
-\subsubsection*{Diagrama do Anamorfismo (Mealy)}
-
-O diagrama seguinte ilustra a estrutura da máquina. Note-se que o tipo de saída do anamorfismo é ele próprio uma função ($I \to O \times \dots$), caracterizando a natureza interativa do sistema:
+\subsubsection*{Diagrama do Catamorfismo}
 
 \[
 \xymatrix{
-    |S| 
-           \ar[d]_-{|mealy|} 
-           \ar[r]^-{|g|} 
-& 
-    |I -> O >< S| 
-           \ar[d]^{|id -> id >< mealy|} 
+    |[String]|
+           \ar[r]^-{|outList|}
+           \ar[d]_-{|transmitir|}
+&
+    |1 + String >< [String]|
+           \ar[d]^{|id + id >< transmitir|}
 \\
-    |Mealy I O| 
-& 
-    |I -> O >< Mealy I O| 
-           \ar[l]^-{|inMealy|}
+     |Dist [String]|
+&
+     |1 + String >< Dist [String]|
+           \ar[l]^-{|gene|}
 }
 \]
 
+\subsubsection*{Cálculo das Probabilidades}
 
+Para a mensagem |words "Vamos atacar hoje" = ["Vamos", "atacar", "hoje"]|:
 
-\subsubsection*{Implementação: Fluxo de Tráfego em Braga}
+\begin{itemize}
+\item \textbf{Transmissão perfeita}: Manter as 3 palavras ($0.95^3 = 0.857375$) e enviar |"stop"| ($0.9$):
+\[P(\text{perfeita}) = 0.857375 \times 0.9 = 0.7716 \text{ (77.16\%)}\]
 
-No contexto da rede viária, modelamos uma avenida onde o estado é a cor do semáforo (|Bool|). O gene $|g|$ dita que, se o semáforo estiver verde (|True|), a entrada de carros é integralmente transferida para a saída. Se estiver vermelho (|False|), a saída é uma lista vazia, simulando a retenção do tráfego. Em cada passo, o estado alterna, garantindo a fluidez alternada do sistema.
+\item \textbf{Perder "atacar"}: Manter "Vamos" ($0.95$), perder "atacar" ($0.05$), manter "hoje" ($0.95$), enviar |"stop"| ($0.9$):
+\[P(\text{perder "atacar"}) = 0.95 \times 0.05 \times 0.95 \times 0.9 = 0.0406 \text{ (4.06\%)}\]
+
+\item \textbf{Todas as palavras mas sem "stop"}: Manter as 3 palavras ($0.857375$) e falhar |"stop"| ($0.1$):
+\[P(\text{sem stop}) = 0.857375 \times 0.1 = 0.0857 \text{ (8.57\%)}\]
+\end{itemize}
+
+\subsubsection*{Implementação}
 
 \begin{code}
-avenidaMealy :: Bool -> Mealy [Carro] [Carro]
-avenidaMealy = anaMealy gene
+gene :: Either () (String, Dist [String]) -> Dist [String]
+gene = either pzero padd
   where
-    gene verde entrada =
-      if verde
-      then (entrada, not verde)
-      else ([], not verde)
-
-transitoBraga :: Mealy [Carro] [Carro]
-transitoBraga = avenidaMealy True . avenidaMealy False
+    pzero () = D [(["stop"], 0.9), ([], 0.1)]
+    padd (w, D ms) = D [(w:msg, 0.95 * p), (msg, 0.05 * p) | (msg, p) <- ms]
 \end{code}
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%
