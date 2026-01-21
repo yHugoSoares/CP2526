@@ -1082,6 +1082,39 @@ O \ensuremath{\Varid{wrapper}} (função \ensuremath{\Varid{head}}) extrai o pri
 
 Para Streams (listas infinitas), o anamorfismo é definido pelo gene \ensuremath{\Varid{g}\mathbin{:}\Conid{S}\to \Conid{A}\times\Conid{S}}. A Lei de Fokkinga Dual permite-nos fundir dois anamorfismos que partilham a mesma estrutura de saída, simplificando a composição de sistemas dinâmicos. A sua derivação baseia-se na propriedade de que o produto de dois anamorfismos é equivalente a um anamorfismo cujo gene é o produto dos genes originais, garantindo a comutatividade do diagrama.
 
+\subsubsection*{Derivação da Lei de Fokkinga Dual}
+
+A lei dual da recursividade mútua (Fokkinga Dual) fundamenta-se na propriedade universal do produto para anamorfismos. Pretendemos provar que:
+\begin{eqnarray}
+    \ensuremath{\alt{\ana{\Varid{f}}}{\ana{\Varid{g}}}\mathrel{=}\ana{\alt{\Varid{h}}{\Varid{k}}}}
+\end{eqnarray}
+Assumindo a estrutura de Streams, onde o functor é \ensuremath{\fun F \;\Conid{X}\mathrel{=}\Conid{A}\times\Conid{X}}, a prova desenrola-se da seguinte forma:
+
+\begin{eqnarray*}
+\start
+    \ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{f}\mathrel{=}\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{h}\\\Varid{out}\comp \Varid{g}\mathrel{=}\fun F \;\alt{\Varid{f}}{\Varid{g}}\comp \Varid{k}\end{lcbr}}
+%
+\just\equiv{ Isomorfismo out/in; Exponencialização }
+%
+    \ensuremath{\begin{lcbr}\Varid{out}\comp \Varid{f}\mathrel{=}(\Varid{id}\times\alt{\Varid{f}}{\Varid{g}})\comp \Varid{h}\\\Varid{out}\comp \Varid{g}\mathrel{=}(\Varid{id}\times\alt{\Varid{f}}{\Varid{g}})\comp \Varid{k}\end{lcbr}}
+%
+\just\equiv{ Propriedade Universal do Coproduto (Either) }
+%
+    \ensuremath{[\mskip1.5mu \Varid{out}\comp \Varid{f},\Varid{out}\comp \Varid{g}\mskip1.5mu]\mathrel{=}(\Varid{id}\times\alt{\Varid{f}}{\Varid{g}})\comp [\mskip1.5mu \Varid{h},\Varid{k}\mskip1.5mu]}
+%
+\just\equiv{ Lei da Fusão do Either: [f . i, g . j] = f + g }
+%
+    \ensuremath{\Varid{out}\comp [\mskip1.5mu \Varid{f},\Varid{g}\mskip1.5mu]\mathrel{=}(\Varid{id}\times\alt{\Varid{f}}{\Varid{g}})\comp [\mskip1.5mu \Varid{h},\Varid{k}\mskip1.5mu]}
+%
+\just\equiv{ Definição de Anamorfismo (Propriedade Universal) }
+%
+    \ensuremath{[\mskip1.5mu \Varid{f},\Varid{g}\mskip1.5mu]\mathrel{=}\ana{[\mskip1.5mu \Varid{h},\Varid{k}\mskip1.5mu]}}
+\qed
+\end{eqnarray*}
+
+Esta derivação demonstra que o par de processos independentes \ensuremath{\Varid{f}} e \ensuremath{\Varid{g}} pode ser fundido num único anamorfismo cujo gene é a escolha (\ensuremath{\alt{\cdot }{\cdot }}) entre os dois comportamentos originais. No caso do \ensuremath{\Varid{fairMerge}}, isto permite que o estado alterne entre consumir a "Estrada 1" ou a "Estrada 2".
+
+
 \subsubsection*{Diagrama do Anamorfismo}
 
 O \ensuremath{\Varid{fairMerge}} alterna entre duas streams. O estado do anamorfismo é o par de streams \ensuremath{(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})} e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
@@ -1198,6 +1231,29 @@ Para a mensagem \ensuremath{\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~
 \[P(\text{sem stop}) = 0.857375 \times 0.1 = 0.0857 \text{ (8.57\%)}\]
 \end{itemize}
 
+\subsubsection*{Diagrama do Catamorfismo Probabilístico}
+
+O processo de transmissão é modelado por um catamorfismo probabilístico sobre listas. O diagrama ilustra como a estrutura recursiva da mensagem é consumida para gerar uma distribuição estatística de possíveis resultados:
+
+\begin{eqnarray*}
+\xymatrix@C=3cm@R=1.5cm{
+    \ensuremath{[\mskip1.5mu \Conid{String}\mskip1.5mu]} 
+           \ar[d]_-{\ensuremath{\Varid{transmitir}}} 
+           \ar[r]^-{\ensuremath{\Varid{outList}}} 
+& 
+    \ensuremath{\mathrm{1}\mathbin{+}\Conid{String}\lambda \Varid{times}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]} 
+           \ar[d]^{\ensuremath{\Varid{id}\mathbin{+}\Varid{id}\lambda \Varid{times}\;\Varid{transmitir}}} 
+\\
+    \ensuremath{\fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]} 
+& 
+    \ensuremath{\mathrm{1}\mathbin{+}\Conid{String}\lambda \Varid{times}\;\fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]} 
+           \ar[l]^-{\ensuremath{\Varid{gene}}}
+}
+\end{eqnarray*}
+
+A utilização deste diagrama justifica a composição monádica das probabilidades, onde o gene lida com a incerteza de cada palavra individualmente, propagando o efeito para o resultado global da mensagem.
+
+
 \subsubsection*{Implementação}
 
 \begin{hscode}\SaveRestoreHook
@@ -1216,9 +1272,10 @@ Para a mensagem \ensuremath{\Varid{words}\;\text{\ttfamily \char34 Vamos~atacar~
 \>[5]{}\Varid{pzero}\;()\mathrel{=}\Conid{D}\;[\mskip1.5mu ([\mskip1.5mu \text{\ttfamily \char34 stop\char34}\mskip1.5mu],\mathrm{0.9}),([\mskip1.5mu \mskip1.5mu],\mathrm{0.1})\mskip1.5mu]{}\<[E]%
 \\
 \>[3]{}\hsindent{2}{}\<[5]%
-\>[5]{}\Varid{padd}\;(\Varid{w},\Conid{D}\;\Varid{ms})\mathrel{=}\Conid{D}\;[\mskip1.5mu (\Varid{w}\mathbin{:}\Varid{msg},\mathrm{0.95}\mathbin{*}\Varid{p}),(\Varid{msg},\mathrm{0.05}\mathbin{*}\Varid{p})\mid (\Varid{msg},\Varid{p})\leftarrow \Varid{ms}\mskip1.5mu]{}\<[E]%
+\>[5]{}\Varid{padd}\;(\Varid{w},\Varid{d})\mathrel{=}\mathbf{do}\;\{\mskip1.5mu \Varid{msg}\leftarrow \Varid{d};\Conid{D}\;[\mskip1.5mu (\Varid{w}\mathbin{:}\Varid{msg},\mathrm{0.95}),(\Varid{msg},\mathrm{0.05})\mskip1.5mu]\mskip1.5mu\}{}\<[E]%
 \ColumnHook
 \end{hscode}\resethooks
+
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%
 

@@ -816,6 +816,39 @@ lengthList = cataList (either (const 0) (succ . p2))
 
 Para Streams (listas infinitas), o anamorfismo é definido pelo gene |g : S -> A >< S|. A Lei de Fokkinga Dual permite-nos fundir dois anamorfismos que partilham a mesma estrutura de saída, simplificando a composição de sistemas dinâmicos. A sua derivação baseia-se na propriedade de que o produto de dois anamorfismos é equivalente a um anamorfismo cujo gene é o produto dos genes originais, garantindo a comutatividade do diagrama.
 
+\subsubsection*{Derivação da Lei de Fokkinga Dual}
+
+A lei dual da recursividade mútua (Fokkinga Dual) fundamenta-se na propriedade universal do produto para anamorfismos. Pretendemos provar que:
+\begin{eqnarray}
+    |either (ana f) (ana g) = ana (either h k)|
+\end{eqnarray}
+Assumindo a estrutura de Streams, onde o functor é |fF X = A >< X|, a prova desenrola-se da seguinte forma:
+
+\begin{eqnarray*}
+\start
+    |lcbr (out . f = fF (either f g) . h)(out . g = fF (either f g) . k)|
+%
+\just\equiv{ Isomorfismo out/in; Exponencialização }
+%
+    |lcbr (out . f = (id >< (either f g)) . h)(out . g = (id >< (either f g)) . k)|
+%
+\just\equiv{ Propriedade Universal do Coproduto (Either) }
+%
+    |[out . f, out . g] = (id >< (either f g)) . [h, k]|
+%
+\just\equiv{ Lei da Fusão do Either: [f . i, g . j] = f + g }
+%
+    |out . [f, g] = (id >< (either f g)) . [h, k]|
+%
+\just\equiv{ Definição de Anamorfismo (Propriedade Universal) }
+%
+    |[f, g] = ana [h, k]|
+\qed
+\end{eqnarray*}
+
+Esta derivação demonstra que o par de processos independentes |f| e |g| pode ser fundido num único anamorfismo cujo gene é a escolha (|either|) entre os dois comportamentos originais. No caso do |fairMerge|, isto permite que o estado alterne entre consumir a "Estrada 1" ou a "Estrada 2".
+
+
 \subsubsection*{Diagrama do Anamorfismo}
 
 O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de streams |(Stream a, Stream a)| e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
@@ -904,6 +937,29 @@ Para a mensagem |words "Vamos atacar hoje" = ["Vamos", "atacar", "hoje"]|:
 \[P(\text{sem stop}) = 0.857375 \times 0.1 = 0.0857 \text{ (8.57\%)}\]
 \end{itemize}
 
+\subsubsection*{Diagrama do Catamorfismo Probabilístico}
+
+O processo de transmissão é modelado por um catamorfismo probabilístico sobre listas. O diagrama ilustra como a estrutura recursiva da mensagem é consumida para gerar uma distribuição estatística de possíveis resultados:
+
+\begin{eqnarray*}
+\xymatrix@@C=3cm@@R=1.5cm{
+    |[String]| 
+           \ar[d]_-{|transmitir|} 
+           \ar[r]^-{|outList|} 
+& 
+    |1 + String \times [String]| 
+           \ar[d]^{|id + id \times transmitir|} 
+\\
+    |Dist [String]| 
+& 
+    |1 + String \times Dist [String]| 
+           \ar[l]^-{|gene|}
+}
+\end{eqnarray*}
+
+A utilização deste diagrama justifica a composição monádica das probabilidades, onde o gene lida com a incerteza de cada palavra individualmente, propagando o efeito para o resultado global da mensagem.
+
+
 \subsubsection*{Implementação}
 
 \begin{code}
@@ -911,8 +967,8 @@ gene :: Either () (String, Dist [String]) -> Dist [String]
 gene = either pzero padd
   where
     pzero () = D [(["stop"], 0.9), ([], 0.1)]
-    padd (w, D ms) = D [(w:msg, 0.95 * p), (msg, 0.05 * p) | (msg, p) <- ms]
-\end{code}
+    padd (w, d) = do { msg <- d ; D [(w:msg, 0.95), (msg, 0.05)] }\end{code}
+
 
 %----------------- Índice remissivo (exige makeindex) -------------------------%
 
