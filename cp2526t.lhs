@@ -947,12 +947,12 @@ O processo de transmissão é modelado por um catamorfismo probabilístico sobre
            \ar[d]_-{|transmitir|} 
            \ar[r]^-{|outList|} 
 & 
-    |1 + String \times [String]| 
-           \ar[d]^{|id + id \times transmitir|} 
+    |1 + String >< [String]| 
+           \ar[d]^{|id + id >< transmitir|} 
 \\
     |Dist [String]| 
 & 
-    |1 + String \times Dist [String]| 
+    |1 + String >< Dist [String]| 
            \ar[l]^-{|gene|}
 }
 \end{eqnarray*}
