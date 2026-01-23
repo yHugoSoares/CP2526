@@ -897,18 +897,34 @@ que sejam necessárias.
 
 \subsubsection*{1. Catamorfismo de níveis (\ensuremath{\Varid{levels}})}
 
-A função \ensuremath{\Varid{levels}} visa agrupar os elementos da árvore numa lista de listas, 
-onde cada sublista contém os elementos de um nível. Para tal, definimos o catamorfismo \ensuremath{\Varid{levels}\mathrel{=}\llparenthesis\, \Varid{glevels}\,\rrparenthesis}.
+\textbf{Objetivo}: Agrupar os elementos de uma árvore binária numa lista de listas, onde cada sublista contém todos os elementos de um determinado nível.
 
-O gene \ensuremath{\Varid{glevels}} processa os dois casos do tipo \ensuremath{\Conid{BTree}}: 
+\textbf{Estratégia}: Utilizamos um catamorfismo de árvores binárias, definido como \ensuremath{\Varid{levels}\mathrel{=}\llparenthesis\, \Varid{glevels}\,\rrparenthesis}. Um catamorfismo consome a estrutura recursiva da árvore, substituindo cada construtor (\ensuremath{\Conid{Empty}} e \ensuremath{\Conid{Node}}) por operações definidas no gene.
+
+\textbf{Definição do Gene \ensuremath{\Varid{glevels}}}:
+
+O gene processa os dois casos do tipo \ensuremath{\Conid{BTree}\;\Varid{a}}:
 
 \begin{itemize} 
 
-\item No caso \ensuremath{\Conid{Empty}}, retorna uma lista vazia \ensuremath{[\mskip1.5mu \mskip1.5mu]}. 
-\item No caso \ensuremath{\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))}, onde \ensuremath{\Varid{l}} e \ensuremath{\Varid{r}} são as listas de listas já calculadas para as subárvores, 
-o gene coloca \ensuremath{\Varid{a}} numa lista unitária (nível 0) e utiliza a função \ensuremath{\Varid{zipWithPlus}} para fundir os níveis restantes das duas subárvores. 
+\item \textbf{Caso base} (\ensuremath{\Conid{Empty}}): Uma árvore vazia não tem níveis, logo retornamos a lista vazia \ensuremath{[\mskip1.5mu \mskip1.5mu]}.
+
+\item \textbf{Caso recursivo} (\ensuremath{\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))}): Recebemos o valor da raiz \ensuremath{\Varid{a}} e as listas de níveis já computadas para as subárvores esquerda \ensuremath{\Varid{l}} e direita \ensuremath{\Varid{r}}. A estratégia é:
+  \begin{enumerate}
+    \item Criar o nível 0 contendo apenas a raiz: \ensuremath{[\mskip1.5mu \Varid{a}\mskip1.5mu]}
+    \item Combinar os níveis restantes de ambas as subárvores usando \ensuremath{\Varid{zipWithPlus}}
+  \end{enumerate}
 
 \end{itemize}
+
+\textbf{Função auxiliar \ensuremath{\Varid{zipWithPlus}}}: Esta função funde duas listas de listas, concatenando elemento a elemento. Lida com três casos:
+\begin{itemize}
+  \item Se a lista esquerda está vazia, retorna a direita
+  \item Se a lista direita está vazia, retorna a esquerda  
+  \item Se ambas têm elementos, concatena as cabeças \ensuremath{(\Varid{x}\mathbin{+\!\!+}\Varid{y})} e aplica recursivamente às caudas
+\end{itemize}
+
+Esta abordagem garante que elementos do mesmo nível (inicialmente em subárvores diferentes) sejam unidos numa única lista.
 
 O diagrama do catamorfismo é o seguinte:
 
@@ -941,21 +957,40 @@ Onde comb(a,(L,D))=[a]:zipWith (++) L D.
 
 \subsubsection*{2. Anamorfismo de travessia (\ensuremath{\Varid{bft}})}
 
-Para a função \ensuremath{\Varid{bft}}, utilizamos a estratégia sugerida por Okasaki, baseada numa fila (\ensuremath{\Varid{queue}}).
- Esta função é um anamorfismo de listas onde o estado é uma lista de árvores \ensuremath{[\mskip1.5mu \Conid{BTree}\;\Varid{a}\mskip1.5mu]}.
+\textbf{Objetivo}: Realizar uma travessia \emph{breadth-first} (por largura) de uma árvore binária, produzindo uma lista com os elementos ordenados por níveis.
 
-O gene \ensuremath{\Varid{geneBFT}} funciona da seguinte forma: 
+\textbf{Estratégia}: Implementamos \ensuremath{\Varid{bft}} como um anamorfismo de listas, seguindo a abordagem de Okasaki baseada numa fila (\emph{queue}). Um anamorfismo \emph{gera} uma estrutura (neste caso, uma lista) a partir de um estado inicial.
+
+\textbf{Estado}: O estado é uma fila de árvores \ensuremath{[\mskip1.5mu \Conid{BTree}\;\Varid{a}\mskip1.5mu]} que representa as árvores ainda por processar. Inicialmente, a fila contém apenas a árvore original: \ensuremath{[\mskip1.5mu \Varid{t}\mskip1.5mu]}.
+
+\textbf{Definição do Gene \ensuremath{\Varid{geneBFT}}}:
+
+O gene determina o próximo elemento da lista de saída e o novo estado:
+
 \begin{itemize} 
 
-\item Se a fila estiver vazia (\ensuremath{[\mskip1.5mu \mskip1.5mu]}), a travessia termina. 
-\item Se o primeiro elemento for \ensuremath{\Conid{Empty}}, ignoramos e continuamos com o resto da fila. 
-\item Se for um \ensuremath{\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))}, extraímos o valor \ensuremath{\Varid{a}} e adicionamos as subárvores \ensuremath{\Varid{l}} e \ensuremath{\Varid{r}} ao 
+\item \textbf{Caso 1} (fila vazia \ensuremath{[\mskip1.5mu \mskip1.5mu]}): A travessia terminou. Retornamos \ensuremath{i_1\;()} para sinalizar o fim da lista.
 
-\textbf{fim} 
+\item \textbf{Caso 2} (primeiro elemento é \ensuremath{\Conid{Empty}}): Árvores vazias não contribuem com elementos. Ignoramos e processamos recursivamente o resto da fila.
 
-da fila (comportamento FIFO), garantindo a ordem por níveis. 
+\item \textbf{Caso 3} (primeiro elemento é \ensuremath{\Conid{Node}\;(\Varid{a},(\Varid{l},\Varid{r}))}): 
+  \begin{enumerate}
+    \item Extraímos o valor da raiz \ensuremath{\Varid{a}} como próximo elemento da lista
+    \item Adicionamos as subárvores \ensuremath{\Varid{l}} e \ensuremath{\Varid{r}} ao \textbf{fim} da fila: \ensuremath{\Varid{ts}\mathbin{+\!\!+}[\mskip1.5mu \Varid{l},\Varid{r}\mskip1.5mu]}
+    \item Retornamos \ensuremath{i_2\;(\Varid{a},\Varid{ts}\mathbin{+\!\!+}[\mskip1.5mu \Varid{l},\Varid{r}\mskip1.5mu])}
+  \end{enumerate}
 
 \end{itemize}
+
+\textbf{Porque funciona}: Ao adicionar subárvores ao fim da fila (comportamento FIFO - \emph{First In, First Out}), garantimos que todas as árvores de um nível são processadas antes das do nível seguinte. Isto assegura a ordem \emph{breadth-first}.
+
+\textbf{Exemplo}: Para a árvore \ensuremath{t_1 }, a evolução da fila é:
+\begin{tabbing}\ttfamily
+~\char91{}Node~5~\char46{}\char46{}\char46{}\char93{}~~~~~~~~~~\char45{}\char62{}~5\char44{}~fila~\char61{}~\char91{}Node~3~\char46{}\char46{}\char46{}\char44{}~Node~7~\char46{}\char46{}\char46{}\char93{}\\
+\ttfamily ~\char91{}Node~3~\char46{}\char46{}\char46{}\char44{}~\char46{}\char46{}\char46{}\char93{}~~~~~\char45{}\char62{}~3\char44{}~fila~\char61{}~\char91{}Node~7~\char46{}\char46{}\char46{}\char44{}~Node~1~\char46{}\char46{}\char46{}\char44{}~Node~4~\char46{}\char46{}\char46{}\char93{}\\
+\ttfamily ~\char91{}Node~7~\char46{}\char46{}\char46{}\char44{}~\char46{}\char46{}\char46{}\char93{}~~~~~\char45{}\char62{}~7\char44{}~fila~\char61{}~\char91{}Node~1~\char46{}\char46{}\char46{}\char44{}~Node~4~\char46{}\char46{}\char46{}\char44{}~Node~6~\char46{}\char46{}\char46{}\char44{}~Node~8~\char46{}\char46{}\char46{}\char93{}\\
+\ttfamily ~\char46{}\char46{}\char46{}e~assim~sucessivamente
+\end{tabbing}
 
 \begin{hscode}\SaveRestoreHook
 \column{B}{@{}>{\hspre}l<{\hspost}@{}}%
@@ -990,18 +1025,46 @@ da fila (comportamento FIFO), garantindo a ordem por níveis.
 
 \subsubsection*{Resolução Teórica}
 
-A função \ensuremath{\Varid{f}\;\Varid{x}\;\Varid{n}} implementa o cálculo do seno hiperbólico através da sua série de Taylor:
+\textbf{Objetivo}: Calcular o seno hiperbólico de \ensuremath{\Varid{x}} usando \ensuremath{\Varid{n}} termos da sua série de Taylor, de forma eficiente.
+
+\textbf{Série de Taylor do \ensuremath{\Varid{sinh}}}:
 \begin{eqnarray*}
 \sinh(x) = \sum_{i=0}^{\infty} a_i \quad \text{onde} \quad a_i = \frac{x^{2i+1}}{(2i+1)!}
 \end{eqnarray*}
 
-A eficiência desta implementação reside na relação de recorrência entre termos consecutivos, evitando o cálculo redundante de fatoriais e potências:
+Os primeiros termos são:
 \begin{eqnarray*}
-a_{i} = \frac{h_{i-1}}{k_{i-1}} 
-\quad \text{com} 
-\quad h_i = x^2 \cdot h_{i-1} 
-\quad \text{e} 
-\quad k_i = k_{i-1} \cdot j_{i-1}
+a_0 &=& \frac{x^1}{1!} = x \\
+a_1 &=& \frac{x^3}{3!} = \frac{x^3}{6} \\
+a_2 &=& \frac{x^5}{5!} = \frac{x^5}{120} \\
+a_3 &=& \frac{x^7}{7!} = \frac{x^7}{5040}
+\end{eqnarray*}
+
+\textbf{Problema}: Calcular cada termo independentemente seria muito ineficiente (fatoriais e potências crescem rapidamente).
+
+\textbf{Solução}: Usar uma relação de recorrência. Observando a relação entre termos consecutivos:
+\begin{eqnarray*}
+\frac{a_{i+1}}{a_i} = \frac{x^{2(i+1)+1}}{(2(i+1)+1)!} \cdot \frac{(2i+1)!}{x^{2i+1}} = \frac{x^2}{(2i+2)(2i+3)}
+\end{eqnarray*}
+
+Portanto: $a_{i+1} = a_i \cdot \frac{x^2}{(2i+2)(2i+3)}$
+
+\textbf{Estratégia de implementação}: Mantemos acumuladores para:
+\begin{itemize}
+    \item $s$: Soma acumulada dos termos já calculados
+    \item $h$: Numerador do próximo termo (potência de $x$)
+    \item $k$: Denominador do próximo termo (fatorial)
+    \item $j$: Multiplicador para atualizar o fatorial: $(2i+2)(2i+3)$
+    \item $m$: Incremento para $j$ (aumenta 8 a cada iteração)
+\end{itemize}
+
+\textbf{Derivação das relações}:
+\begin{eqnarray*}
+h_i &=& x^{2i+1} \quad \Rightarrow \quad h_{i+1} = h_i \cdot x^2 \\
+k_i &=& (2i+1)! \quad \Rightarrow \quad k_{i+1} = k_i \cdot (2i+2)(2i+3) \\
+j_i &=& (2i+2)(2i+3) = 4i^2 + 10i + 6 \\
+j_{i+1} - j_i &=& 4(i+1)^2 + 10(i+1) + 6 - (4i^2 + 10i + 6) = 8i + 14 \\
+\text{(simplificando)} \quad m_i &=& 8i + 14 \quad \text{(começa em 22 para } i=1\text{)}
 \end{eqnarray*}
 
 O catamorfismo de números naturais (\ensuremath{\Varid{worker}}) evolui conforme o seguinte diagrama:
@@ -1026,15 +1089,34 @@ O catamorfismo de números naturais (\ensuremath{\Varid{worker}}) evolui conform
 
 \textbf{Análise das Componentes do Estado:}
 
-Para $n=0$, o estado inicial é \ensuremath{\Varid{start}\;\Varid{x}\mathrel{=}[\mskip1.5mu \Varid{x},\Varid{x}\mathbin{\uparrow}\mathrm{3},\mathrm{6},\mathrm{20},\mathrm{22}\mskip1.5mu]}. A lógica dos acumuladores é a seguinte:
+Para $n=0$, o estado inicial é \ensuremath{\Varid{start}\;\Varid{x}\mathrel{=}[\mskip1.5mu \Varid{x},\Varid{x}\mathbin{\uparrow}\mathrm{3},\mathrm{6},\mathrm{20},\mathrm{22}\mskip1.5mu]}, correspondendo a \ensuremath{[\mskip1.5mu \Varid{s},\Varid{h},\Varid{k},\Varid{j},\Varid{m}\mskip1.5mu]}:
 \begin{itemize}
-    \item $s$: Soma acumulada. Começa com $x$ (o termo $a_0$).
-    \item $h$: Numerador do próximo termo. Começa em $x^3$ (para $a_1$).
-    \item $k$: Denominador do próximo termo. Começa em $3! = 6$ (para $a_1$).
-    \item $j, m$: Auxiliares para a progressão do denominador. $j$ representa o multiplicador para o próximo fatorial ímpar. A constante $m$ (que aumenta de 8 em 8) garante que $j$ siga a sequência $(2n+2)(2n+3)$.
+    \item $s = x$: Soma já contém $a_0 = x$ (primeiro termo da série)
+    \item $h = x^3$: Numerador pronto para calcular $a_1 = \frac{x^3}{6}$
+    \item $k = 6 = 3!$: Denominador para $a_1$
+    \item $j = 20 = 4 \cdot 5$: Multiplicador para obter $5! = 3! \cdot 4 \cdot 5$ (necessário para $a_2$)
+    \item $m = 22$: Incremento para $j$ (de 20 para $6 \cdot 7 = 42$ na próxima iteração)
 \end{itemize}
 
-O \ensuremath{\Varid{wrapper}} (função \ensuremath{\Varid{head}}) extrai o primeiro elemento da lista, que é a soma acumulada final \ensuremath{\Varid{s}} após \ensuremath{\Varid{n}} iterações.
+\textbf{Iteração do \ensuremath{\Varid{loop}}}: A cada chamada, \ensuremath{\Varid{loop}\;\Varid{x}\;[\mskip1.5mu \Varid{s},\Varid{h},\Varid{k},\Varid{j},\Varid{m}\mskip1.5mu]} calcula:
+\begin{itemize}
+    \item Novo $s$: soma acumulada mais o termo atual $\frac{h}{k}$
+    \item Novo $h$: multiplica por $x^2$ para a próxima potência
+    \item Novo $k$: multiplica por $j$ para o próximo fatorial
+    \item Novo $j$: incrementa por $m$ para manter a sequência correta
+    \item Novo $m$: incrementa 8 para o próximo salto
+\end{itemize}
+
+\textbf{Exemplo de execução} para \ensuremath{\Varid{f}\;\mathrm{1.0}\;\mathrm{2}}:
+\begin{tabbing}\ttfamily
+~Iteracao~0\char58{}~\char91{}1\char46{}0\char44{}~1\char46{}0\char44{}~6\char44{}~20\char44{}~22\char93{}\\
+\ttfamily ~Iteracao~1\char58{}~\char91{}1\char46{}0~\char43{}~1\char46{}0\char47{}6\char44{}~1\char46{}0\char44{}~120\char44{}~42\char44{}~30\char93{}~~~~~\char61{}~\char91{}1\char46{}1667\char44{}~1\char46{}0\char44{}~120\char44{}~42\char44{}~30\char93{}\\
+\ttfamily ~Iteracao~2\char58{}~\char91{}1\char46{}1667~\char43{}~1\char46{}0\char47{}120\char44{}~1\char46{}0\char44{}~5040\char44{}~72\char44{}~38\char93{}~\char61{}~\char91{}1\char46{}175\char44{}~1\char46{}0\char44{}~5040\char44{}~72\char44{}~38\char93{}
+\end{tabbing}
+
+Resultado: \ensuremath{\Varid{head}\;[\mskip1.5mu \mathrm{1.175},\mathbin{...}\mskip1.5mu]\mathrel{=}\mathrm{1.175}}, próximo de $\sinh(1.0) \approx 1.1752$
+
+O \ensuremath{\Varid{wrapper}} (função \ensuremath{\Varid{head}}) extrai o primeiro elemento da lista final, que contém a soma de todos os \ensuremath{\Varid{n}\mathbin{+}\mathrm{1}} termos da série.
 
 \subsubsection*{Implementação}
 
@@ -1078,9 +1160,27 @@ O \ensuremath{\Varid{wrapper}} (função \ensuremath{\Varid{head}}) extrai o pri
 
 \subsection*{Problema 3}
 
+\textbf{Objetivo}: Implementar uma função \ensuremath{\Varid{fairMerge}} que intercala dois streams (listas infinitas) de forma alternada, usando um anamorfismo.
+
+\textbf{Contexto}: O problema é motivado pela situação real de tráfego onde carros de duas vias se intercalam de forma \emph{justa} (cada carro deixa passar um da outra via).
+
 \subsubsection*{Lei de Fokkinga Dual}
 
-Para Streams (listas infinitas), o anamorfismo é definido pelo gene \ensuremath{\Varid{g}\mathbin{:}\Conid{S}\to \Conid{A}\times\Conid{S}}. A Lei de Fokkinga Dual permite-nos fundir dois anamorfismos que partilham a mesma estrutura de saída, simplificando a composição de sistemas dinâmicos. A sua derivação baseia-se na propriedade de que o produto de dois anamorfismos é equivalente a um anamorfismo cujo gene é o produto dos genes originais, garantindo a comutatividade do diagrama.
+\textbf{Propósito}: A Lei de Fokkinga Dual é a versão para anamorfismos da lei de recursividade mútua. Permite fundir dois anamorfismos mutuamente recursivos num único anamorfismo, usando o combinador \ensuremath{\alt{\cdot }{\cdot }}.
+
+\textbf{Enunciado da lei}:
+\begin{eqnarray*}
+\ensuremath{\alt{\ana{\Varid{h}}}{\ana{\Varid{k}}}\mathrel{=}\ana{\alt{\Varid{f}}{\Varid{g}}}}
+\end{eqnarray*}
+
+sob as condições:
+\begin{eqnarray*}
+\ensuremath{\begin{lcbr}\Varid{out}\comp \ana{\Varid{h}}\mathrel{=}\fun F \;\alt{\ana{\Varid{h}}}{\ana{\Varid{k}}}\comp \Varid{f}\\\Varid{out}\comp \ana{\Varid{k}}\mathrel{=}\fun F \;\alt{\ana{\Varid{h}}}{\ana{\Varid{k}}}\comp \Varid{g}\end{lcbr}}
+\end{eqnarray*}
+
+\textbf{Interpretação}: Dois processos geradores \ensuremath{\Varid{h}} e \ensuremath{\Varid{k}} que se referenciam mutuamente podem ser fundidos num único gerador que escolhe (via \ensuremath{\alt{\cdot }{\cdot }}) qual comportamento seguir em cada passo.
+
+Para Streams, onde \ensuremath{\fun F \;\Conid{X}\mathrel{=}\Conid{A}\times\Conid{X}}, isto significa que podemos ter dois geradores que produzem streams alternando entre si, e fundi-los num único anamorfismo.
 
 \subsubsection*{Derivação da Lei de Fokkinga Dual}
 
@@ -1117,7 +1217,15 @@ Esta derivação demonstra que o par de processos independentes \ensuremath{\Var
 
 \subsubsection*{Diagrama do Anamorfismo}
 
-O \ensuremath{\Varid{fairMerge}} alterna entre duas streams. O estado do anamorfismo é o par de streams \ensuremath{(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})} e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
+\textbf{Estratégia para \ensuremath{\Varid{fairMerge}}}: 
+
+Em vez de definir \ensuremath{\Varid{fairMerge}} por recursividade mútua (como \ensuremath{\Varid{h}} e \ensuremath{\Varid{k}} no código original), aplicamos a Lei de Fokkinga Dual para obter um único anamorfismo.
+
+O \ensuremath{\Varid{fairMerge}} alterna entre duas streams. O estado do anamorfismo é o par de streams \ensuremath{(\Conid{Stream}\;\Varid{a},\Conid{Stream}\;\Varid{a})} e, em cada passo, o sistema:
+\begin{enumerate}
+  \item Retira o elemento da cabeça da primeira stream
+  \item Troca a ordem das streams no estado para que na próxima iteração processe a outra
+\end{enumerate}
 
 \[
 \xymatrix{
@@ -1137,7 +1245,26 @@ O \ensuremath{\Varid{fairMerge}} alterna entre duas streams. O estado do anamorf
 
 
 \textbf{Análise do Gene:}
-O gene do \ensuremath{\Varid{fairMerge}} recebe duas streams \ensuremath{(\Varid{s1},\Varid{s2})}. Ele utiliza o \ensuremath{\mathsf{out}} na primeira para obter a cabeça \ensuremath{\Varid{h}} e a cauda \ensuremath{\Varid{t}}, e devolve o par \ensuremath{(\Varid{h},(\Varid{s2},\Varid{t}))}. Note-se a inversão de \ensuremath{\Varid{s2}} com \ensuremath{\Varid{t}}, que é o que garante a alternância entre as estradas (Braga e Porto) em cada iteração.
+O gene do \ensuremath{\Varid{fairMerge}} recebe o estado \ensuremath{(\Varid{s1},\Varid{s2})} (par de streams) e:
+\begin{enumerate}
+  \item Usa \ensuremath{\mathsf{out}\;\Varid{s1}} para decompor a primeira stream em cabeça \ensuremath{\Varid{h}} e cauda \ensuremath{\Varid{t}}
+  \item Retorna \ensuremath{(\Varid{h},(\Varid{s2},\Varid{t}))}, onde:
+    \begin{itemize}
+      \item \ensuremath{\Varid{h}} é o próximo elemento do stream resultante
+      \item \ensuremath{(\Varid{s2},\Varid{t})} é o novo estado, com as streams trocadas
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Porque funciona}: A inversão de \ensuremath{\Varid{s2}} com \ensuremath{\Varid{t}} no novo estado \ensuremath{(\Varid{s2},\Varid{t})} garante que:
+\begin{itemize}
+  \item Na iteração atual, consumimos de \ensuremath{\Varid{s1}} ("Estrada 1")
+  \item Na próxima iteração, o estado é \ensuremath{(\Varid{s2},\Varid{t})}, logo consumiremos de \ensuremath{\Varid{s2}} ("Estrada 2")
+  \item Na iteração seguinte, o estado será \ensuremath{(\Varid{t},\Varid{s2'})}, voltando a consumir da original \ensuremath{\Varid{s1}}
+\end{itemize}
+
+Esta troca sistemática produz a alternância perfeita: $s1_0, s2_0, s1_1, s2_1, s1_2, s2_2, \ldots$
+
+\textbf{Nota sobre \ensuremath{\Varid{fairMergeM}}}: Esta variante usa um parâmetro adicional \ensuremath{\Varid{p}} (probabilidade) para decidir de qual stream consumir, permitindo modelar situações onde a alternância não é perfeita (e.g., tráfego com diferentes prioridades).
 
 \subsubsection*{Implementação}
 
@@ -1188,14 +1315,44 @@ O gene do \ensuremath{\Varid{fairMerge}} recebe duas streams \ensuremath{(\Varid
 
 \subsection*{Problema 4}
 
+\textbf{Objetivo}: Modelar o comportamento probabilístico de um aparelho de telegrafia avariado que pode perder palavras durante a transmissão.
+
 \subsubsection*{Resolução Teórica}
 
-O problema modela um aparelho de telegrafia avariado usando um catamorfismo probabilístico \ensuremath{\Varid{pcataList}\;\Varid{gene}}. O gene deve processar dois casos:
+\textbf{Modelo}: Usamos um catamorfismo probabilístico \ensuremath{\Varid{pcataList}\;\Varid{gene}} que, em vez de devolver um resultado determinístico, devolve uma distribuição de probabilidades sobre possíveis resultados.
+
+\textbf{Tipo}: \ensuremath{\Varid{transmitir}\mathbin{::}[\mskip1.5mu \Conid{String}\mskip1.5mu]\to \fun{Dist}\;[\mskip1.5mu \Conid{String}\mskip1.5mu]}
+
+O gene processa a mensagem (lista de palavras) recursivamente:
 
 \begin{itemize}
-\item \textbf{Caso base} (lista vazia): O aparelho envia o código \ensuremath{\text{\ttfamily \char34 stop\char34}} com 90\% de probabilidade, ou não envia nada (lista vazia) com 10\% de probabilidade (falha).
+\item \textbf{Caso base} (\ensuremath{i_1\;()}, lista vazia): 
+  
+  Chegámos ao fim da mensagem. O aparelho tenta enviar \ensuremath{\text{\ttfamily \char34 stop\char34}}:
+  \begin{itemize}
+    \item Com probabilidade 90\%: sucesso → resultado é \ensuremath{[\mskip1.5mu \text{\ttfamily \char34 stop\char34}\mskip1.5mu]}
+    \item Com probabilidade 10\%: falha → resultado é \ensuremath{[\mskip1.5mu \mskip1.5mu]} (sem stop)
+  \end{itemize}
+  
+  Código: \ensuremath{\Conid{D}\;[\mskip1.5mu ([\mskip1.5mu \text{\ttfamily \char34 stop\char34}\mskip1.5mu],\mathrm{0.9}),([\mskip1.5mu \mskip1.5mu],\mathrm{0.1})\mskip1.5mu]}
 
-\item \textbf{Caso recursivo} (palavra \ensuremath{\Varid{w}} e resto \ensuremath{\Varid{ms}}): A palavra é mantida com 95\% de probabilidade (\ensuremath{\Varid{w}\mathbin{:}\Varid{msg}}), ou perde-se com 5\% de probabilidade (\ensuremath{\Varid{msg}}).
+\item \textbf{Caso recursivo} (\ensuremath{i_2\;(\Varid{w},\Varid{d})}): 
+  
+  Recebemos a palavra atual \ensuremath{\Varid{w}} e a distribuição \ensuremath{\Varid{d}} de possíveis continuações (resultado do processamento do resto da lista).
+  
+  Para cada possível continuação \ensuremath{\Varid{msg}} em \ensuremath{\Varid{d}}, a palavra \ensuremath{\Varid{w}}:
+  \begin{itemize}
+    \item Com probabilidade 95\%: é transmitida → resultado é \ensuremath{\Varid{w}\mathbin{:}\Varid{msg}}
+    \item Com probabilidade 5\%: perde-se → resultado é \ensuremath{\Varid{msg}} (sem \ensuremath{\Varid{w}})
+  \end{itemize}
+  
+  Usamos notação monádica: \ensuremath{\mathbf{do}\;\{\mskip1.5mu \Varid{msg}\leftarrow \Varid{d};\Conid{D}\;[\mskip1.5mu (\Varid{w}\mathbin{:}\Varid{msg},\mathrm{0.95}),(\Varid{msg},\mathrm{0.05})\mskip1.5mu]\mskip1.5mu\}}
+  
+  Isto combina as probabilidades: se \ensuremath{\Varid{msg}} tem probabilidade \ensuremath{\Varid{p}} em \ensuremath{\Varid{d}}, então:
+  \begin{itemize}
+    \item \ensuremath{\Varid{w}\mathbin{:}\Varid{msg}} terá probabilidade $p \times 0.95$
+    \item \ensuremath{\Varid{msg}} (sem \ensuremath{\Varid{w}}) terá probabilidade $p \times 0.05$
+  \end{itemize}
 \end{itemize}
 
 \subsubsection*{Diagrama do Catamorfismo}
@@ -1252,6 +1409,32 @@ O processo de transmissão é modelado por um catamorfismo probabilístico sobre
 \end{eqnarray*}
 
 A utilização deste diagrama justifica a composição monádica das probabilidades, onde o gene lida com a incerteza de cada palavra individualmente, propagando o efeito para o resultado global da mensagem.
+
+\textbf{Resposta às questões}:
+
+Para a mensagem \ensuremath{[\mskip1.5mu \text{\ttfamily \char34 Vamos\char34},\text{\ttfamily \char34 atacar\char34},\text{\ttfamily \char34 hoje\char34}\mskip1.5mu]}:
+
+\begin{enumerate}
+\item \textbf{Probabilidade de perder "atacar": 4.06\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (perdida) $\to$ hoje (mantida) $\to$ stop (enviado)
+  
+  $P = 0.95 \times 0.05 \times 0.95 \times 0.9 = 0.0406$
+
+\item \textbf{Probabilidade de transmitir todas mas sem "stop": 8.57\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (mantida) $\to$ hoje (mantida) $\to$ stop (falhou)
+  
+  $P = 0.95^3 \times 0.1 = 0.857375 \times 0.1 = 0.0857$
+
+\item \textbf{Probabilidade de transmissão perfeita: 77.16\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (mantida) $\to$ hoje (mantida) $\to$ stop (enviado)
+  
+  $P = 0.95^3 \times 0.9 = 0.857375 \times 0.9 = 0.7716$
+\end{enumerate}
+
+\textbf{Verificação}: A soma de todas as probabilidades possíveis (há $2^4 = 16$ combinações) deve ser 100\%. Os três casos acima são apenas alguns dos possíveis resultados.
 
 
 \subsubsection*{Implementação}

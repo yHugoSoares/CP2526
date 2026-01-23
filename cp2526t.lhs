@@ -667,18 +667,34 @@ que sejam necessárias.
 
 \subsubsection*{1. Catamorfismo de níveis (|levels|)}
 
-A função |levels| visa agrupar os elementos da árvore numa lista de listas, 
-onde cada sublista contém os elementos de um nível. Para tal, definimos o catamorfismo |levels = cataBTree glevels|.
+\textbf{Objetivo}: Agrupar os elementos de uma árvore binária numa lista de listas, onde cada sublista contém todos os elementos de um determinado nível.
 
-O gene |glevels| processa os dois casos do tipo |BTree|: 
+\textbf{Estratégia}: Utilizamos um catamorfismo de árvores binárias, definido como |levels = cataBTree glevels|. Um catamorfismo consome a estrutura recursiva da árvore, substituindo cada construtor (|Empty| e |Node|) por operações definidas no gene.
+
+\textbf{Definição do Gene |glevels|}:
+
+O gene processa os dois casos do tipo |BTree a|:
 
 \begin{itemize} 
 
-\item No caso |Empty|, retorna uma lista vazia |[]|. 
-\item No caso |Node (a, (l, r))|, onde |l| e |r| são as listas de listas já calculadas para as subárvores, 
-o gene coloca |a| numa lista unitária (nível 0) e utiliza a função |zipWithPlus| para fundir os níveis restantes das duas subárvores. 
+\item \textbf{Caso base} (|Empty|): Uma árvore vazia não tem níveis, logo retornamos a lista vazia |[]|.
+
+\item \textbf{Caso recursivo} (|Node (a, (l, r))|): Recebemos o valor da raiz |a| e as listas de níveis já computadas para as subárvores esquerda |l| e direita |r|. A estratégia é:
+  \begin{enumerate}
+    \item Criar o nível 0 contendo apenas a raiz: |[a]|
+    \item Combinar os níveis restantes de ambas as subárvores usando |zipWithPlus|
+  \end{enumerate}
 
 \end{itemize}
+
+\textbf{Função auxiliar |zipWithPlus|}: Esta função funde duas listas de listas, concatenando elemento a elemento. Lida com três casos:
+\begin{itemize}
+  \item Se a lista esquerda está vazia, retorna a direita
+  \item Se a lista direita está vazia, retorna a esquerda  
+  \item Se ambas têm elementos, concatena as cabeças |(x ++ y)| e aplica recursivamente às caudas
+\end{itemize}
+
+Esta abordagem garante que elementos do mesmo nível (inicialmente em subárvores diferentes) sejam unidos numa única lista.
 
 O diagrama do catamorfismo é o seguinte:
 
@@ -711,21 +727,40 @@ Onde comb(a,(L,D))=[a]:zipWith (++) L D.
 
 \subsubsection*{2. Anamorfismo de travessia (|bft|)}
 
-Para a função |bft|, utilizamos a estratégia sugerida por Okasaki, baseada numa fila (|queue|).
- Esta função é um anamorfismo de listas onde o estado é uma lista de árvores |[BTree a]|.
+\textbf{Objetivo}: Realizar uma travessia \emph{breadth-first} (por largura) de uma árvore binária, produzindo uma lista com os elementos ordenados por níveis.
 
-O gene |geneBFT| funciona da seguinte forma: 
+\textbf{Estratégia}: Implementamos |bft| como um anamorfismo de listas, seguindo a abordagem de Okasaki baseada numa fila (\emph{queue}). Um anamorfismo \emph{gera} uma estrutura (neste caso, uma lista) a partir de um estado inicial.
+
+\textbf{Estado}: O estado é uma fila de árvores |[BTree a]| que representa as árvores ainda por processar. Inicialmente, a fila contém apenas a árvore original: |[t]|.
+
+\textbf{Definição do Gene |geneBFT|}:
+
+O gene determina o próximo elemento da lista de saída e o novo estado:
+
 \begin{itemize} 
 
-\item Se a fila estiver vazia (|[]|), a travessia termina. 
-\item Se o primeiro elemento for |Empty|, ignoramos e continuamos com o resto da fila. 
-\item Se for um |Node (a, (l, r))|, extraímos o valor |a| e adicionamos as subárvores |l| e |r| ao 
+\item \textbf{Caso 1} (fila vazia |[]|): A travessia terminou. Retornamos |Left ()| para sinalizar o fim da lista.
 
-\textbf{fim} 
+\item \textbf{Caso 2} (primeiro elemento é |Empty|): Árvores vazias não contribuem com elementos. Ignoramos e processamos recursivamente o resto da fila.
 
-da fila (comportamento FIFO), garantindo a ordem por níveis. 
+\item \textbf{Caso 3} (primeiro elemento é |Node (a, (l, r))|): 
+  \begin{enumerate}
+    \item Extraímos o valor da raiz |a| como próximo elemento da lista
+    \item Adicionamos as subárvores |l| e |r| ao \textbf{fim} da fila: |ts ++ [l, r]|
+    \item Retornamos |Right (a, ts ++ [l, r])|
+  \end{enumerate}
 
 \end{itemize}
+
+\textbf{Porque funciona}: Ao adicionar subárvores ao fim da fila (comportamento FIFO - \emph{First In, First Out}), garantimos que todas as árvores de um nível são processadas antes das do nível seguinte. Isto assegura a ordem \emph{breadth-first}.
+
+\textbf{Exemplo}: Para a árvore |t1|, a evolução da fila é:
+\begin{verbatim}
+[Node 5 ...]          -> 5, fila = [Node 3 ..., Node 7 ...]
+[Node 3 ..., ...]     -> 3, fila = [Node 7 ..., Node 1 ..., Node 4 ...]
+[Node 7 ..., ...]     -> 7, fila = [Node 1 ..., Node 4 ..., Node 6 ..., Node 8 ...]
+...e assim sucessivamente
+\end{verbatim}
 
 \begin{code}
 glevels = either (const []) (\(a, (ls, rs)) -> [a] : zipWithPlus ls rs)
@@ -743,18 +778,46 @@ bft t = anaList geneBFT [t]
 
 \subsubsection*{Resolução Teórica}
 
-A função |f x n| implementa o cálculo do seno hiperbólico através da sua série de Taylor:
+\textbf{Objetivo}: Calcular o seno hiperbólico de |x| usando |n| termos da sua série de Taylor, de forma eficiente.
+
+\textbf{Série de Taylor do |sinh|}:
 \begin{eqnarray*}
 \sinh(x) = \sum_{i=0}^{\infty} a_i \quad \text{onde} \quad a_i = \frac{x^{2i+1}}{(2i+1)!}
 \end{eqnarray*}
 
-A eficiência desta implementação reside na relação de recorrência entre termos consecutivos, evitando o cálculo redundante de fatoriais e potências:
+Os primeiros termos são:
 \begin{eqnarray*}
-a_{i} = \frac{h_{i-1}}{k_{i-1}} 
-\quad \text{com} 
-\quad h_i = x^2 \cdot h_{i-1} 
-\quad \text{e} 
-\quad k_i = k_{i-1} \cdot j_{i-1}
+a_0 &=& \frac{x^1}{1!} = x \\
+a_1 &=& \frac{x^3}{3!} = \frac{x^3}{6} \\
+a_2 &=& \frac{x^5}{5!} = \frac{x^5}{120} \\
+a_3 &=& \frac{x^7}{7!} = \frac{x^7}{5040}
+\end{eqnarray*}
+
+\textbf{Problema}: Calcular cada termo independentemente seria muito ineficiente (fatoriais e potências crescem rapidamente).
+
+\textbf{Solução}: Usar uma relação de recorrência. Observando a relação entre termos consecutivos:
+\begin{eqnarray*}
+\frac{a_{i+1}}{a_i} = \frac{x^{2(i+1)+1}}{(2(i+1)+1)!} \cdot \frac{(2i+1)!}{x^{2i+1}} = \frac{x^2}{(2i+2)(2i+3)}
+\end{eqnarray*}
+
+Portanto: $a_{i+1} = a_i \cdot \frac{x^2}{(2i+2)(2i+3)}$
+
+\textbf{Estratégia de implementação}: Mantemos acumuladores para:
+\begin{itemize}
+    \item $s$: Soma acumulada dos termos já calculados
+    \item $h$: Numerador do próximo termo (potência de $x$)
+    \item $k$: Denominador do próximo termo (fatorial)
+    \item $j$: Multiplicador para atualizar o fatorial: $(2i+2)(2i+3)$
+    \item $m$: Incremento para $j$ (aumenta 8 a cada iteração)
+\end{itemize}
+
+\textbf{Derivação das relações}:
+\begin{eqnarray*}
+h_i &=& x^{2i+1} \quad \Rightarrow \quad h_{i+1} = h_i \cdot x^2 \\
+k_i &=& (2i+1)! \quad \Rightarrow \quad k_{i+1} = k_i \cdot (2i+2)(2i+3) \\
+j_i &=& (2i+2)(2i+3) = 4i^2 + 10i + 6 \\
+j_{i+1} - j_i &=& 4(i+1)^2 + 10(i+1) + 6 - (4i^2 + 10i + 6) = 8i + 14 \\
+\text{(simplificando)} \quad m_i &=& 8i + 14 \quad \text{(começa em 22 para } i=1\text{)}
 \end{eqnarray*}
 
 O catamorfismo de números naturais (|worker|) evolui conforme o seguinte diagrama:
@@ -779,15 +842,34 @@ O catamorfismo de números naturais (|worker|) evolui conforme o seguinte diagra
 
 \textbf{Análise das Componentes do Estado:}
 
-Para $n=0$, o estado inicial é |start x = [x, x^3, 6, 20, 22]|. A lógica dos acumuladores é a seguinte:
+Para $n=0$, o estado inicial é |start x = [x, x^3, 6, 20, 22]|, correspondendo a |[s, h, k, j, m]|:
 \begin{itemize}
-    \item $s$: Soma acumulada. Começa com $x$ (o termo $a_0$).
-    \item $h$: Numerador do próximo termo. Começa em $x^3$ (para $a_1$).
-    \item $k$: Denominador do próximo termo. Começa em $3! = 6$ (para $a_1$).
-    \item $j, m$: Auxiliares para a progressão do denominador. $j$ representa o multiplicador para o próximo fatorial ímpar. A constante $m$ (que aumenta de 8 em 8) garante que $j$ siga a sequência $(2n+2)(2n+3)$.
+    \item $s = x$: Soma já contém $a_0 = x$ (primeiro termo da série)
+    \item $h = x^3$: Numerador pronto para calcular $a_1 = \frac{x^3}{6}$
+    \item $k = 6 = 3!$: Denominador para $a_1$
+    \item $j = 20 = 4 \cdot 5$: Multiplicador para obter $5! = 3! \cdot 4 \cdot 5$ (necessário para $a_2$)
+    \item $m = 22$: Incremento para $j$ (de 20 para $6 \cdot 7 = 42$ na próxima iteração)
 \end{itemize}
 
-O |wrapper| (função |head|) extrai o primeiro elemento da lista, que é a soma acumulada final |s| após |n| iterações.
+\textbf{Iteração do |loop|}: A cada chamada, |loop x [s, h, k, j, m]| calcula:
+\begin{itemize}
+    \item Novo $s$: soma acumulada mais o termo atual $\frac{h}{k}$
+    \item Novo $h$: multiplica por $x^2$ para a próxima potência
+    \item Novo $k$: multiplica por $j$ para o próximo fatorial
+    \item Novo $j$: incrementa por $m$ para manter a sequência correta
+    \item Novo $m$: incrementa 8 para o próximo salto
+\end{itemize}
+
+\textbf{Exemplo de execução} para |f 1.0 2|:
+\begin{verbatim}
+Iteracao 0: [1.0, 1.0, 6, 20, 22]
+Iteracao 1: [1.0 + 1.0/6, 1.0, 120, 42, 30]     = [1.1667, 1.0, 120, 42, 30]
+Iteracao 2: [1.1667 + 1.0/120, 1.0, 5040, 72, 38] = [1.175, 1.0, 5040, 72, 38]
+\end{verbatim}
+
+Resultado: |head [1.175, ...] = 1.175|, próximo de $\sinh(1.0) \approx 1.1752$
+
+O |wrapper| (função |head|) extrai o primeiro elemento da lista final, que contém a soma de todos os |n+1| termos da série.
 
 \subsubsection*{Implementação}
 
@@ -812,9 +894,27 @@ lengthList = cataList (either (const 0) (succ . p2))
 
 \subsection*{Problema 3}
 
+\textbf{Objetivo}: Implementar uma função |fairMerge| que intercala dois streams (listas infinitas) de forma alternada, usando um anamorfismo.
+
+\textbf{Contexto}: O problema é motivado pela situação real de tráfego onde carros de duas vias se intercalam de forma \emph{justa} (cada carro deixa passar um da outra via).
+
 \subsubsection*{Lei de Fokkinga Dual}
 
-Para Streams (listas infinitas), o anamorfismo é definido pelo gene |g : S -> A >< S|. A Lei de Fokkinga Dual permite-nos fundir dois anamorfismos que partilham a mesma estrutura de saída, simplificando a composição de sistemas dinâmicos. A sua derivação baseia-se na propriedade de que o produto de dois anamorfismos é equivalente a um anamorfismo cujo gene é o produto dos genes originais, garantindo a comutatividade do diagrama.
+\textbf{Propósito}: A Lei de Fokkinga Dual é a versão para anamorfismos da lei de recursividade mútua. Permite fundir dois anamorfismos mutuamente recursivos num único anamorfismo, usando o combinador |either|.
+
+\textbf{Enunciado da lei}:
+\begin{eqnarray*}
+|either (ana h) (ana k) = ana (either f g)|
+\end{eqnarray*}
+
+sob as condições:
+\begin{eqnarray*}
+|lcbr (out . ana h = fF (either (ana h) (ana k)) . f)(out . ana k = fF (either (ana h) (ana k)) . g)|
+\end{eqnarray*}
+
+\textbf{Interpretação}: Dois processos geradores |h| e |k| que se referenciam mutuamente podem ser fundidos num único gerador que escolhe (via |either|) qual comportamento seguir em cada passo.
+
+Para Streams, onde |fF X = A >< X|, isto significa que podemos ter dois geradores que produzem streams alternando entre si, e fundi-los num único anamorfismo.
 
 \subsubsection*{Derivação da Lei de Fokkinga Dual}
 
@@ -851,7 +951,15 @@ Esta derivação demonstra que o par de processos independentes |f| e |g| pode s
 
 \subsubsection*{Diagrama do Anamorfismo}
 
-O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de streams |(Stream a, Stream a)| e, em cada passo, o sistema retira um elemento de uma e passa o controlo para a outra (trocando a ordem no par).
+\textbf{Estratégia para |fairMerge|}: 
+
+Em vez de definir |fairMerge| por recursividade mútua (como |h| e |k| no código original), aplicamos a Lei de Fokkinga Dual para obter um único anamorfismo.
+
+O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de streams |(Stream a, Stream a)| e, em cada passo, o sistema:
+\begin{enumerate}
+  \item Retira o elemento da cabeça da primeira stream
+  \item Troca a ordem das streams no estado para que na próxima iteração processe a outra
+\end{enumerate}
 
 \[
 \xymatrix{
@@ -871,7 +979,26 @@ O |fairMerge| alterna entre duas streams. O estado do anamorfismo é o par de st
 
 
 \textbf{Análise do Gene:}
-O gene do |fairMerge| recebe duas streams |(s1, s2)|. Ele utiliza o |outStream| na primeira para obter a cabeça |h| e a cauda |t|, e devolve o par |(h, (s2, t))|. Note-se a inversão de |s2| com |t|, que é o que garante a alternância entre as estradas (Braga e Porto) em cada iteração.
+O gene do |fairMerge| recebe o estado |(s1, s2)| (par de streams) e:
+\begin{enumerate}
+  \item Usa |outStream s1| para decompor a primeira stream em cabeça |h| e cauda |t|
+  \item Retorna |(h, (s2, t))|, onde:
+    \begin{itemize}
+      \item |h| é o próximo elemento do stream resultante
+      \item |(s2, t)| é o novo estado, com as streams trocadas
+    \end{itemize}
+\end{enumerate}
+
+\textbf{Porque funciona}: A inversão de |s2| com |t| no novo estado |(s2, t)| garante que:
+\begin{itemize}
+  \item Na iteração atual, consumimos de |s1| ("Estrada 1")
+  \item Na próxima iteração, o estado é |(s2, t)|, logo consumiremos de |s2| ("Estrada 2")
+  \item Na iteração seguinte, o estado será |(t, s2')|, voltando a consumir da original |s1|
+\end{itemize}
+
+Esta troca sistemática produz a alternância perfeita: $s1_0, s2_0, s1_1, s2_1, s1_2, s2_2, \ldots$
+
+\textbf{Nota sobre |fairMergeM|}: Esta variante usa um parâmetro adicional |p| (probabilidade) para decidir de qual stream consumir, permitindo modelar situações onde a alternância não é perfeita (e.g., tráfego com diferentes prioridades).
 
 \subsubsection*{Implementação}
 
@@ -894,14 +1021,44 @@ fairMergeM = anaStream geneM
 
 \subsection*{Problema 4}
 
+\textbf{Objetivo}: Modelar o comportamento probabilístico de um aparelho de telegrafia avariado que pode perder palavras durante a transmissão.
+
 \subsubsection*{Resolução Teórica}
 
-O problema modela um aparelho de telegrafia avariado usando um catamorfismo probabilístico |pcataList gene|. O gene deve processar dois casos:
+\textbf{Modelo}: Usamos um catamorfismo probabilístico |pcataList gene| que, em vez de devolver um resultado determinístico, devolve uma distribuição de probabilidades sobre possíveis resultados.
+
+\textbf{Tipo}: |transmitir :: [String] -> Dist [String]|
+
+O gene processa a mensagem (lista de palavras) recursivamente:
 
 \begin{itemize}
-\item \textbf{Caso base} (lista vazia): O aparelho envia o código |"stop"| com 90\% de probabilidade, ou não envia nada (lista vazia) com 10\% de probabilidade (falha).
+\item \textbf{Caso base} (|Left ()|, lista vazia): 
+  
+  Chegámos ao fim da mensagem. O aparelho tenta enviar |"stop"|:
+  \begin{itemize}
+    \item Com probabilidade 90\%: sucesso → resultado é |["stop"]|
+    \item Com probabilidade 10\%: falha → resultado é |[]| (sem stop)
+  \end{itemize}
+  
+  Código: |D [(["stop"], 0.9), ([], 0.1)]|
 
-\item \textbf{Caso recursivo} (palavra |w| e resto |ms|): A palavra é mantida com 95\% de probabilidade (|w:msg|), ou perde-se com 5\% de probabilidade (|msg|).
+\item \textbf{Caso recursivo} (|Right (w, d)|): 
+  
+  Recebemos a palavra atual |w| e a distribuição |d| de possíveis continuações (resultado do processamento do resto da lista).
+  
+  Para cada possível continuação |msg| em |d|, a palavra |w|:
+  \begin{itemize}
+    \item Com probabilidade 95\%: é transmitida → resultado é |w:msg|
+    \item Com probabilidade 5\%: perde-se → resultado é |msg| (sem |w|)
+  \end{itemize}
+  
+  Usamos notação monádica: |do { msg <- d ; D [(w:msg, 0.95), (msg, 0.05)] }|
+  
+  Isto combina as probabilidades: se |msg| tem probabilidade |p| em |d|, então:
+  \begin{itemize}
+    \item |w:msg| terá probabilidade $p \times 0.95$
+    \item |msg| (sem |w|) terá probabilidade $p \times 0.05$
+  \end{itemize}
 \end{itemize}
 
 \subsubsection*{Diagrama do Catamorfismo}
@@ -958,6 +1115,32 @@ O processo de transmissão é modelado por um catamorfismo probabilístico sobre
 \end{eqnarray*}
 
 A utilização deste diagrama justifica a composição monádica das probabilidades, onde o gene lida com a incerteza de cada palavra individualmente, propagando o efeito para o resultado global da mensagem.
+
+\textbf{Resposta às questões}:
+
+Para a mensagem |["Vamos", "atacar", "hoje"]|:
+
+\begin{enumerate}
+\item \textbf{Probabilidade de perder "atacar": 4.06\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (perdida) $\to$ hoje (mantida) $\to$ stop (enviado)
+  
+  $P = 0.95 \times 0.05 \times 0.95 \times 0.9 = 0.0406$
+
+\item \textbf{Probabilidade de transmitir todas mas sem "stop": 8.57\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (mantida) $\to$ hoje (mantida) $\to$ stop (falhou)
+  
+  $P = 0.95^3 \times 0.1 = 0.857375 \times 0.1 = 0.0857$
+
+\item \textbf{Probabilidade de transmissão perfeita: 77.16\%}
+  
+  Caminho: Vamos (mantida) $\to$ atacar (mantida) $\to$ hoje (mantida) $\to$ stop (enviado)
+  
+  $P = 0.95^3 \times 0.9 = 0.857375 \times 0.9 = 0.7716$
+\end{enumerate}
+
+\textbf{Verificação}: A soma de todas as probabilidades possíveis (há $2^4 = 16$ combinações) deve ser 100\%. Os três casos acima são apenas alguns dos possíveis resultados.
 
 
 \subsubsection*{Implementação}
