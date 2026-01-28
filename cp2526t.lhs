@@ -125,7 +125,7 @@
 
 %====== DEFINIR GRUPO E ELEMENTOS =============================================%
 
-\group{G99}
+\group{G17}
 \studentA{107293}{Hugo Ferreira Soares }
 \studentB{106902}{Francisco Ribeiro Martins }
 
